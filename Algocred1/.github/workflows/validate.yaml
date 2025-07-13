@@ -1,0 +1,14 @@
+name: Pull Request validation
+
+on: [pull_request]
+
+
+jobs:
+  Algocred1-contracts-ci:
+    name: Run Algocred1-contracts validation
+    uses: ./.github/workflows/Algocred1-contracts-ci.yaml
+
+  Algocred1-frontend-ci:
+    name: Run Algocred1-frontend validation
+    uses: ./.github/workflows/Algocred1-frontend-ci.yaml
+

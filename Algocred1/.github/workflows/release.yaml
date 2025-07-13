@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.vscode/**'
+      - '.idea/**'
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  Algocred1-contracts-validate:
+    name: Run Algocred1-contracts release
+    secrets: inherit
+    uses: ./.github/workflows/Algocred1-contracts-ci.yaml
+
+  Algocred1-contracts-release:
+    name: Run Algocred1-contracts release
+    secrets: inherit
+    uses: ./.github/workflows/Algocred1-contracts-cd.yaml
+    needs: Algocred1-contracts-validate
+
+  Algocred1-frontend-validate:
+    name: Run Algocred1-frontend release
+    secrets: inherit
+    uses: ./.github/workflows/Algocred1-frontend-ci.yaml
+
+  Algocred1-frontend-release:
+    name: Run Algocred1-frontend release
+    secrets: inherit
+    uses: ./.github/workflows/Algocred1-frontend-cd.yaml
+    needs: Algocred1-frontend-validate
