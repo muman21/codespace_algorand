@@ -1,13 +1,9 @@
 import { SupportedWallet, WalletId, WalletManager, WalletProvider } from '@txnlab/use-wallet-react'
 import { SnackbarProvider } from 'notistack'
-import Home from './Home'
 import { getAlgodConfigFromViteEnvironment } from './utils/network/getAlgoClientConfigs'
+import Home from './Home'
 
-const supportedWallets: SupportedWallet[] = [
-  { id: WalletId.PERA },
-  { id: WalletId.DEFLY },
-  { id: WalletId.EXODUS },
-]
+const supportedWallets: SupportedWallet[] = [{ id: WalletId.PERA }, { id: WalletId.DEFLY }, { id: WalletId.EXODUS }]
 
 export default function App() {
   const algodConfig = getAlgodConfigFromViteEnvironment()

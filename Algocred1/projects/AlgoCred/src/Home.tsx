@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react'
 import { useWallet } from '@txnlab/use-wallet-react'
+import React, { useRef, useState } from 'react'
 import ConnectWallet from './components/ConnectWallet'
 import MintDegreeForm from './components/MintDegreeForm'
 import VerifyDegreeForm from './components/VerifyDegreeForm'
@@ -9,6 +9,7 @@ const Home: React.FC = () => {
   const [openWalletModal, setOpenWalletModal] = useState(false)
   const [showMint, setShowMint] = useState(false)
   const [showVerify, setShowVerify] = useState(false)
+
   const mintRef = useRef<HTMLDivElement>(null)
   const verifyRef = useRef<HTMLDivElement>(null)
 
@@ -17,12 +18,10 @@ const Home: React.FC = () => {
     setShowVerify(false)
   }
 
-  const scrollToRef = (ref: React.RefObject<HTMLDivElement>, showSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
-    showSetter(true)
+  const scrollTo = (ref: React.RefObject<HTMLDivElement>, setter: React.Dispatch<React.SetStateAction<boolean>>) => {
+    setter(true)
     setTimeout(() => {
-      if (ref.current) {
-        ref.current.scrollIntoView({ behavior: 'smooth' })
-      }
+      ref.current?.scrollIntoView({ behavior: 'smooth' })
     }, 100)
   }
 
@@ -31,64 +30,82 @@ const Home: React.FC = () => {
       {/* NAVBAR */}
       <nav className="bg-cyan-800 px-6 py-4 flex justify-between items-center shadow-md">
         <h1 className="text-2xl font-bold text-white">AlgoCred</h1>
-        <div className="space-x-4">
+        <div className="space-x-4 flex items-center">
           <button className="btn btn-ghost text-white" onClick={resetSections}>
             Home
           </button>
           <button
             className="btn btn-outline text-white border-white hover:bg-white hover:text-cyan-800"
-            onClick={() => scrollToRef(mintRef, setShowMint)}
+            onClick={() => scrollTo(mintRef, setShowMint)}
           >
             Issue Degree
           </button>
           <button
             className="btn btn-outline text-white border-white hover:bg-white hover:text-cyan-800"
-            onClick={() => scrollToRef(verifyRef, setShowVerify)}
+            onClick={() => scrollTo(verifyRef, setShowVerify)}
           >
             Verify Degree
           </button>
+
           <button className="btn btn-primary" onClick={() => setOpenWalletModal(true)}>
             {activeAddress ? 'Wallet Connected' : 'Connect Wallet'}
           </button>
         </div>
       </nav>
 
-      {/* HERO SECTION */}
+      {/* HERO */}
       <section className="bg-cyan-100 py-20 text-center">
         <h2 className="text-4xl font-bold mb-4 text-cyan-900">Welcome to AlgoCred</h2>
         <p className="text-lg text-gray-700 max-w-2xl mx-auto">
-          Issue and verify academic credentials on the Algorand blockchain. Trusted, secure, and globally accessible.
+          Issue and verify academic credentials on the Algorand blockchain. Trusted, secure, cheap, fast and globally accessible.
         </p>
       </section>
 
-      {/* PARTNER & TECH BOXES */}
-      <section className="py-12 flex flex-col items-center bg-white">
-        <div className="flex flex-wrap justify-center gap-8 max-w-6xl mx-auto mb-8">
-          <div className="bg-white border-l-4 border-green-600 p-6 rounded-xl shadow-md w-full md:w-[28rem] text-center">
-            <img src="/hec-logo.png" alt="HEC Logo" className="h-12 mx-auto mb-4" />
-            <h3 className="text-xl font-bold mb-2">🎓 HEC Partnership</h3>
-            <p className="text-gray-700">
-              We are partnering with the Higher Education Commission (HEC) for digital issuance of official degrees.
-            </p>
+      {/* PARTNERS */}
+      <section className="py-12 bg-white">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-bold text-cyan-800">Our Partners</h2>
+          <p className="text-gray-600 mt-2">Institutions that have already partnered for a Pilot</p>
+        </div>
+
+        <div className="flex flex-wrap justify-center gap-8 max-w-7xl mx-auto">
+          {/* SMIU */}
+          <div className="bg-white border-l-4 border-green-600 p-6 rounded-xl shadow-md w-full sm:w-[22rem] text-center">
+            <img src="/smiu-logo.png" alt="SMIU Logo" className="h-12 mx-auto mb-4" />
+            <h3 className="text-xl font-bold mb-2">🏛 Sindh Madressatul Islam University (SMIU)</h3>
+            <p className="text-gray-700">A prestigious institution taking the lead in digital academic credentialing.</p>
           </div>
-          <div className="bg-white border-l-4 border-blue-600 p-6 rounded-xl shadow-md w-full md:w-[28rem] text-center">
-            <img src="/tanzeem-logo.png" alt="Tanzeem Logo" className="h-12 mx-auto mb-4" />
-            <h3 className="text-xl font-bold mb-2">🕌 Tanzeem ul Madaris Ahle Sunnat Pakistan</h3>
+
+          {/* Darul Uloom Memon */}
+          <div className="bg-white border-l-4 border-blue-600 p-6 rounded-xl shadow-md w-full sm:w-[22rem] text-center">
+            <img src="/darululoom-logo.png" alt="Darul Uloom Logo" className="h-12 mx-auto mb-4" />
+            <h3 className="text-xl font-bold mb-2">🕌 Darul Uloom Memon</h3>
+            <p className="text-gray-700">Digitally issuing certified religious degrees while maintaining authenticity and tradition.</p>
+          </div>
+
+          {/* Iqra University */}
+          <div className="bg-white border-l-4 border-purple-600 p-6 rounded-xl shadow-md w-full sm:w-[22rem] text-center">
+            <img src="/iqra-logo.png" alt="Iqra University Logo" className="h-12 mx-auto mb-4" />
+            <h3 className="text-xl font-bold mb-2">🎓 Iqra University Main Campus</h3>
             <p className="text-gray-700">
-              Issuing certified religious degrees in collaboration with Tanzeem ul Madaris Ahle Sunnat Pakistan.
+              One of the top private universities in the country, embracing blockchain innovation in education.
             </p>
           </div>
         </div>
-        <div className="bg-white border-l-4 border-cyan-600 p-6 rounded-xl shadow-md w-full md:w-[28rem] text-center">
-          <img src="/algorand-logo.png" alt="Algorand Logo" className="h-10 mx-auto mb-4" />
-          <h3 className="text-xl font-bold mb-2">💡 Powered by Algorand</h3>
-          <p className="text-gray-700">
-            Using the fastest, cheapest blockchain with <strong>instant finality</strong> and global scalability.
-          </p>
+
+        {/* Algorand (Below) */}
+        <div className="flex justify-center mt-10">
+          <div className="bg-white border-l-4 border-cyan-500 p-6 rounded-xl shadow-md w-full sm:w-[28rem] text-center">
+            <img src="/algorand-logo.svg" alt="Algorand Logo" className="h-12 mx-auto mb-4" />
+            <h3 className="text-xl font-bold mb-2">🔗 Powered by Algorand</h3>
+            <p className="text-gray-700">
+              Secure, cheap, carbon-negative blockchain with instant finality powering our degree verification.
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* MINT SECTION */}
+      {/* ISSUE DEGREE */}
       {showMint && (
         <div ref={mintRef} className="w-full max-w-4xl bg-white rounded-xl shadow-md p-6 my-10 mx-auto relative">
           <h3 className="text-2xl font-bold text-cyan-700 mb-4">🎓 Issue a Degree</h3>
@@ -98,17 +115,12 @@ const Home: React.FC = () => {
             </div>
           )}
           <div className={activeAddress ? '' : 'pointer-events-none opacity-30'}>
-            <MintDegreeForm
-              wallet={''}
-              goBack={function (): void {
-                throw new Error('Function not implemented.')
-              }}
-            />
+            <MintDegreeForm goBack={() => setShowMint(false)} institution={null} />
           </div>
         </div>
       )}
 
-      {/* VERIFY SECTION */}
+      {/* VERIFY DEGREE */}
       {showVerify && (
         <div ref={verifyRef} className="w-full max-w-4xl bg-white rounded-xl shadow-md p-6 my-10 mx-auto relative">
           <h3 className="text-2xl font-bold text-cyan-700 mb-4">✅ Verify a Degree</h3>
@@ -119,16 +131,14 @@ const Home: React.FC = () => {
           )}
           <div className={activeAddress ? '' : 'pointer-events-none opacity-30'}>
             <VerifyDegreeForm
-              wallet={''}
-              goBack={function (): void {
-                throw new Error('Function not implemented.')
-              }}
+              goBack={() => setShowVerify(false)}
+              wallet={activeAddress ? { wallet: activeAddress, name: 'Connected Wallet' } : null}
             />
           </div>
         </div>
       )}
 
-      {/* WHY US SECTION */}
+      {/* WHY US */}
       <section className="bg-cyan-50 py-12">
         <div className="max-w-6xl mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-cyan-800 mb-6">Why Use AlgoCred?</h2>
@@ -149,7 +159,7 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* CONTACT SECTION */}
+      {/* CONTACT */}
       <section className="bg-gray-100 py-12 text-center">
         <div className="max-w-4xl mx-auto px-4">
           <h2 className="text-2xl font-bold text-cyan-700 mb-4">Need Help or a Demo?</h2>
@@ -166,7 +176,7 @@ const Home: React.FC = () => {
       </footer>
 
       {/* Wallet Modal */}
-      <ConnectWallet openModal={openWalletModal} closeModal={() => setOpenWalletModal(false)} />
+      <ConnectWallet openModal={openWalletModal} closeModal={() => setOpenWalletModal(false)} setConnectedInstitution={() => {}} />
     </div>
   )
 }

@@ -1,0 +1,14 @@
+export const registeredInstitutions = [
+  {
+    wallet: '37IWAMOV226G32SEBQEDGAK6HQAB5QNXAHWITB2BYLFLECG3OMEFIN77QI',
+    name: 'SMIU',
+  },
+  {
+    wallet: 'M62NKUYCQT2ESAMEOSGJPTNFCEESEPKJAMSQCPCYNMFJQ4N7VSSKKS6EAM',
+    name: 'Darul Uloom Memon',
+  },
+  {
+    wallet: 'BY5TDHHKSB224JZVCNEEEVADRK7FWYKJAOCKB3KZYAVRL6QZW6OYAVK5NM',
+    name: 'Company XYZ',
+  },
+]
