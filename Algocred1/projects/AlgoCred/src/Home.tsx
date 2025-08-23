@@ -4,6 +4,12 @@ import ConnectWallet from './components/ConnectWallet'
 import MintDegreeForm from './components/MintDegreeForm'
 import VerifyDegreeForm from './components/VerifyDegreeForm'
 
+const registeredInstitutions: { wallet: string; name: string }[] = [
+  { wallet: 'M62NKUYCQT2ESAMEOSGJPTNFCEESEPKJAMSQCPCYNMFJQ4N7VSSKKS6EAM', name: 'Darul Uloom Memon' },
+  { wallet: '37IWAMOV226G32SEBQEDGAK6HQAB5QNXAHWITB2BYLFLECG3OMEFIN77QI', name: 'SMIU' },
+  { wallet: 'BY5TDHHKSB224JZVCNEEEVADRK7FWYKJAOCKB3KZYAVRL6QZW6OYAVK5NM', name: 'Iqra University' },
+]
+
 const Home: React.FC = () => {
   const { activeAddress } = useWallet()
   const [openWalletModal, setOpenWalletModal] = useState(false)
@@ -24,6 +30,10 @@ const Home: React.FC = () => {
       ref.current?.scrollIntoView({ behavior: 'smooth' })
     }, 100)
   }
+
+  // Match wallet to institution
+  const matchedInstitution =
+    registeredInstitutions.find((inst) => inst.wallet.toLowerCase() === (activeAddress || '').toLowerCase()) || null
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -46,7 +56,6 @@ const Home: React.FC = () => {
           >
             Verify Degree
           </button>
-
           <button className="btn btn-primary" onClick={() => setOpenWalletModal(true)}>
             {activeAddress ? 'Wallet Connected' : 'Connect Wallet'}
           </button>
@@ -67,7 +76,6 @@ const Home: React.FC = () => {
           <h2 className="text-3xl font-bold text-cyan-800">Our Partners</h2>
           <p className="text-gray-600 mt-2">Institutions that have already partnered for a Pilot</p>
         </div>
-
         <div className="flex flex-wrap justify-center gap-8 max-w-7xl mx-auto">
           {/* SMIU */}
           <div className="bg-white border-l-4 border-green-600 p-6 rounded-xl shadow-md w-full sm:w-[22rem] text-center">
@@ -75,14 +83,12 @@ const Home: React.FC = () => {
             <h3 className="text-xl font-bold mb-2">🏛 Sindh Madressatul Islam University (SMIU)</h3>
             <p className="text-gray-700">A prestigious institution taking the lead in digital academic credentialing.</p>
           </div>
-
           {/* Darul Uloom Memon */}
           <div className="bg-white border-l-4 border-blue-600 p-6 rounded-xl shadow-md w-full sm:w-[22rem] text-center">
             <img src="/darululoom-logo.png" alt="Darul Uloom Logo" className="h-12 mx-auto mb-4" />
             <h3 className="text-xl font-bold mb-2">🕌 Darul Uloom Memon</h3>
             <p className="text-gray-700">Digitally issuing certified religious degrees while maintaining authenticity and tradition.</p>
           </div>
-
           {/* Iqra University */}
           <div className="bg-white border-l-4 border-purple-600 p-6 rounded-xl shadow-md w-full sm:w-[22rem] text-center">
             <img src="/iqra-logo.png" alt="Iqra University Logo" className="h-12 mx-auto mb-4" />
@@ -92,8 +98,6 @@ const Home: React.FC = () => {
             </p>
           </div>
         </div>
-
-        {/* Algorand (Below) */}
         <div className="flex justify-center mt-10">
           <div className="bg-white border-l-4 border-cyan-500 p-6 rounded-xl shadow-md w-full sm:w-[28rem] text-center">
             <img src="/algorand-logo.svg" alt="Algorand Logo" className="h-12 mx-auto mb-4" />
@@ -115,7 +119,7 @@ const Home: React.FC = () => {
             </div>
           )}
           <div className={activeAddress ? '' : 'pointer-events-none opacity-30'}>
-            <MintDegreeForm goBack={() => setShowMint(false)} institution={null} />
+            <MintDegreeForm goBack={() => setShowMint(false)} institution={matchedInstitution} />
           </div>
         </div>
       )}

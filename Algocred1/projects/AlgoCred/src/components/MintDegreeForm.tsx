@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import algosdk from 'algosdk'
 import { useWallet } from '@txnlab/use-wallet-react'
 
-// Registered institutions (same format as ConnectWallet.tsx)
+// Registered institutions (same format across all components)
 const registeredInstitutions: { wallet: string; name: string }[] = [
   { wallet: 'M62NKUYCQT2ESAMEOSGJPTNFCEESEPKJAMSQCPCYNMFJQ4N7VSSKKS6EAM', name: 'Darul Uloom Memon' },
   { wallet: '37IWAMOV226G32SEBQEDGAK6HQAB5QNXAHWITB2BYLFLECG3OMEFIN77QI', name: 'SMIU' },
@@ -11,6 +11,7 @@ const registeredInstitutions: { wallet: string; name: string }[] = [
 
 interface MintDegreeProps {
   goBack: () => void
+  institution?: { wallet: string; name: string } | null
 }
 
 // Helper to ensure consistent formatting between mint & verify
@@ -18,7 +19,7 @@ function formatDegreeData(studentName: string, universityName: string, gradYear:
   return `${studentName.trim().toLowerCase()}|${universityName.trim().toLowerCase()}|${gradYear.trim()}|${degreeTitle.trim().toLowerCase()}`
 }
 
-const MintDegree: React.FC<MintDegreeProps> = ({ goBack }) => {
+const MintDegreeForm: React.FC<MintDegreeProps> = ({ goBack, institution }) => {
   const { activeAddress, signTransactions } = useWallet()
 
   const [studentName, setStudentName] = useState('')
@@ -26,51 +27,35 @@ const MintDegree: React.FC<MintDegreeProps> = ({ goBack }) => {
   const [gradYear, setGradYear] = useState('2025')
   const [loading, setLoading] = useState(false)
 
-  // Match active wallet to registered institution
-  const matchedInstitution = registeredInstitutions.find((inst) => inst.wallet.toLowerCase() === (activeAddress || '').toLowerCase())
+  const matchedInstitution =
+    institution ?? registeredInstitutions.find((inst) => inst.wallet.toLowerCase() === (activeAddress || '').toLowerCase())
   const universityName = matchedInstitution?.name || ''
 
-  const degreeOptions = ['Bachelor of Science', 'Bachelor of Arts', 'Master of Science', 'Master of Arts', 'PhD']
-  const yearOptions = ['2021', '2022', '2023', '2024', '2025', '2026']
+  const degreeOptions = ['Bachelor of Science', 'Bachelor of Arts', 'Master of Science', 'Master of Arts', 'PhD', 'Other']
+  const yearOptions = Array.from({ length: 16 }, (_, i) => String(2010 + i)) // 2010–2025
 
   const handleMint = async () => {
-    if (!activeAddress) {
-      alert('Please connect your wallet first.')
-      return
-    }
-    if (!universityName) {
-      alert('Connected wallet is not recognized as a registered university.')
-      return
-    }
-    if (!studentName.trim()) {
-      alert('Please enter the student name.')
-      return
-    }
+    if (!activeAddress) return alert('Please connect your wallet first.')
+    if (!universityName) return alert('Connected wallet is not recognized as a registered university.')
+    if (!studentName.trim()) return alert('Please enter the student name.')
 
     try {
       setLoading(true)
       const algodClient = new algosdk.Algodv2('', 'https://testnet-api.algonode.cloud', '')
 
-      // 1. Create SHA-256 hash using consistent format
       const degreeData = formatDegreeData(studentName, universityName, gradYear, degreeTitle)
       const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(degreeData))
       const hashBytes = new Uint8Array(hashBuffer)
       const hashBase64 = btoa(String.fromCharCode(...hashBytes))
 
-      // 2. ARC69 metadata with ONLY the hash
       const metadata = {
         standard: 'arc69',
         description: 'Academic Degree NFT (Privacy-Preserving)',
         media_url: '',
-        properties: {
-          sha256: hashBase64,
-        },
+        properties: { sha256: hashBase64 },
       }
 
-      // 3. Get suggested transaction params
       const params = await algodClient.getTransactionParams().do()
-
-      // 4. Create asset creation txn (only storing hash in note field)
       const txn = algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
         sender: activeAddress,
         total: 1,
@@ -83,27 +68,17 @@ const MintDegree: React.FC<MintDegreeProps> = ({ goBack }) => {
         suggestedParams: params,
       })
 
-      // 5. Encode & sign
       const encodedTxn = algosdk.encodeUnsignedTransaction(txn)
       const signed = await signTransactions([encodedTxn])
+      if (!signed[0]) throw new Error('Transaction signing failed')
 
-      if (!signed[0]) {
-        throw new Error('Transaction signing failed')
-      }
-
-      // 6. Send signed transaction
       const sendResult = await algodClient.sendRawTransaction(signed[0]).do()
-
-      // 7. Wait for confirmation before reading asset ID
       const confirmedTxn = await algosdk.waitForConfirmation(algodClient, sendResult.txid, 4)
       const assetID = confirmedTxn['assetIndex'] || confirmedTxn['assetIndex']
-      if (!assetID) {
-        throw new Error('Asset ID not found after confirmation')
-      }
 
       alert(`✅ Degree NFT minted!\nTransaction ID: ${sendResult.txid}\nAsset ID: ${assetID}`)
       goBack()
-    } catch (err) {
+    } catch {
       alert('❌ Failed to mint degree NFT.')
     } finally {
       setLoading(false)
@@ -160,4 +135,4 @@ const MintDegree: React.FC<MintDegreeProps> = ({ goBack }) => {
   )
 }
 
-export default MintDegree
+export default MintDegreeForm
