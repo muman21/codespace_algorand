@@ -119,7 +119,10 @@ const Home: React.FC = () => {
             </div>
           )}
           <div className={activeAddress ? '' : 'pointer-events-none opacity-30'}>
-            <MintDegreeForm goBack={() => setShowMint(false)} institution={matchedInstitution} />
+            <MintDegreeForm
+              goBack={() => setShowMint(false)}
+              wallet={matchedInstitution} // ✅ updated prop name
+            />
           </div>
         </div>
       )}
