@@ -89,10 +89,10 @@ const Home: React.FC = () => {
             <h3 className="text-xl font-bold mb-2">🕌 Darul Uloom Memon</h3>
             <p className="text-gray-700">Digitally issuing certified religious degrees while maintaining authenticity and tradition.</p>
           </div>
-          {/* Iqra University */}
+          {/* ABC University */}
           <div className="bg-white border-l-4 border-purple-600 p-6 rounded-xl shadow-md w-full sm:w-[22rem] text-center">
-            <img src="/iqra-logo.png" alt="Iqra University Logo" className="h-12 mx-auto mb-4" />
-            <h3 className="text-xl font-bold mb-2">🎓 Iqra University Main Campus</h3>
+            <img src="/iqra-logo.png" alt="ABC University Logo" className="h-12 mx-auto mb-4" />
+            <h3 className="text-xl font-bold mb-2">🎓 ABC University</h3>
             <p className="text-gray-700">
               One of the top private universities in the country, embracing blockchain innovation in education.
             </p>

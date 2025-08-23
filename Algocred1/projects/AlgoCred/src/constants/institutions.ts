@@ -9,6 +9,6 @@ export const registeredInstitutions = [
   },
   {
     wallet: 'BY5TDHHKSB224JZVCNEEEVADRK7FWYKJAOCKB3KZYAVRL6QZW6OYAVK5NM',
-    name: 'Company XYZ',
+    name: 'ABC University',
   },
 ]
