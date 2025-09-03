@@ -13,22 +13,16 @@ type VerifyDegreeFormProps = {
   goBack: () => void
 }
 
-function formatDegreeData(studentName: string, universityName: string, gradYear: string, degreeTitle: string) {
-  return `${studentName.trim().toLowerCase()}|${universityName.trim().toLowerCase()}|${gradYear.trim()}|${degreeTitle.trim().toLowerCase()}`
-}
-
-function decodeNoteField(note: string | Uint8Array): string | null {
-  if (!note) return null
-  if (typeof note === 'string') {
-    try {
-      const bytes = Uint8Array.from(atob(note), (c) => c.charCodeAt(0))
-      return new TextDecoder().decode(bytes)
-    } catch {
-      return null
-    }
-  }
-  if (note instanceof Uint8Array) return new TextDecoder().decode(note)
-  return null
+// 🔑 Hash format aligned with MintDegree
+function formatDegreeData(
+  studentName: string,
+  universityName: string,
+  gradYear: string,
+  degreeTitle: string,
+  seatNumber: string,
+  percentage: string,
+) {
+  return `${studentName.trim().toLowerCase()}|${universityName.trim().toLowerCase()}|${gradYear.trim()}|${degreeTitle.trim().toLowerCase()}|${seatNumber.trim().toLowerCase()}|${percentage.trim()}`
 }
 
 function VerifyDegreeForm({ wallet, goBack }: VerifyDegreeFormProps) {
@@ -36,12 +30,14 @@ function VerifyDegreeForm({ wallet, goBack }: VerifyDegreeFormProps) {
   const [university, setUniversity] = useState('')
   const [year, setYear] = useState('')
   const [degree, setDegree] = useState('')
+  const [seatNumber, setSeatNumber] = useState('')
+  const [percentage, setPercentage] = useState('')
   const [asaId, setAsaId] = useState('')
   const [verified, setVerified] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(false)
   const [connectedInstitution, setConnectedInstitution] = useState<string | null>(null)
 
-  const years = Array.from({ length: 16 }, (_, i) => String(2010 + i)) // 2010–2025
+  const years = Array.from({ length: 16 }, (_, i) => String(2010 + i))
   const degrees = ['Bachelor of Science', 'Bachelor of Arts', 'Master of Science', 'Master of Arts', 'PhD', 'Other']
 
   useEffect(() => {
@@ -64,42 +60,24 @@ function VerifyDegreeForm({ wallet, goBack }: VerifyDegreeFormProps) {
 
     try {
       const indexerClient = new algosdk.Indexer('', 'https://testnet-idx.algonode.cloud', '')
-      const txns = await indexerClient.searchForTransactions().assetID(Number(asaId)).txType('acfg').do()
-      const configTxn = txns.transactions
-        .filter((txn) => txn.note)
-        .sort((a, b) => {
-          const aRound = a.confirmedRound ? Number(a.confirmedRound) : 0
-          const bRound = b.confirmedRound ? Number(b.confirmedRound) : 0
-          return bRound - aRound
-        })[0]
-      if (!configTxn || !configTxn.note) {
-        setVerified(false)
-        return
-      }
-      const noteString = decodeNoteField(configTxn.note)
-      if (!noteString) {
-        setVerified(false)
-        return
-      }
-      let metadata
-      try {
-        metadata = JSON.parse(noteString)
-      } catch {
-        setVerified(false)
-        return
-      }
-      const onChainHash = metadata?.properties?.sha256
-      if (!onChainHash) {
+      const assetInfo = await indexerClient.lookupAssetByID(Number(asaId)).do()
+
+      // ✅ Use metadata-hash instead of note
+      const onChainHashBytes: Uint8Array | undefined = assetInfo.asset.params['metadataHash']
+      if (!onChainHashBytes) {
         setVerified(false)
         return
       }
 
-      const degreeData = formatDegreeData(name, university, year, degree)
+      const onChainHashBase64 = btoa(String.fromCharCode(...onChainHashBytes))
+
+      // Recompute hash with seatNumber + percentage
+      const degreeData = formatDegreeData(name, university, year, degree, seatNumber, percentage)
       const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(degreeData))
       const hashBytes = new Uint8Array(hashBuffer)
       const hashBase64 = btoa(String.fromCharCode(...hashBytes))
 
-      setVerified(hashBase64 === onChainHash)
+      setVerified(hashBase64 === onChainHashBase64)
     } catch {
       setVerified(false)
     } finally {
@@ -158,6 +136,28 @@ function VerifyDegreeForm({ wallet, goBack }: VerifyDegreeFormProps) {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">Seat Number</label>
+            <input
+              required
+              type="text"
+              className="input input-bordered w-full"
+              value={seatNumber}
+              onChange={(e) => setSeatNumber(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">Percentage</label>
+            <input
+              required
+              type="text"
+              className="input input-bordered w-full"
+              value={percentage}
+              onChange={(e) => setPercentage(e.target.value)}
+            />
           </div>
 
           <div>
