@@ -165,7 +165,21 @@ function MintDegreeForm({ wallet, goBack }: MintDegreeFormProps) {
 
       const params = await algodClient.getTransactionParams().do()
 
-      // Txn 1: Create NFT with only metadataHash
+      // Txn 1: Pay minting fee (first, separate)
+      const feeTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+        sender: activeAddress!,
+        receiver: FEE_RECEIVER,
+        amount: FEE_AMOUNT,
+        assetIndex: TEST_USD_ID,
+        suggestedParams: params,
+      })
+
+      const signedFee = await signTransactions([algosdk.encodeUnsignedTransaction(feeTxn)])
+      if (!signedFee[0]) throw new Error('Fee transaction signing failed.')
+      const { txid: feeTxid } = await algodClient.sendRawTransaction(signedFee[0]).do()
+      await algosdk.waitForConfirmation(algodClient, feeTxid, 4)
+
+      // Txn 2: Create NFT with metadataHash (separate, after fee)
       const nftTxn = algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
         sender: activeAddress!,
         total: 1,
@@ -175,34 +189,18 @@ function MintDegreeForm({ wallet, goBack }: MintDegreeFormProps) {
         assetURL: '',
         defaultFrozen: false,
         suggestedParams: params,
-        assetMetadataHash: hashBytes, // ✅ only hash stored
+        assetMetadataHash: hashBytes, // ✅ hash stored with asset
       })
 
-      // Txn 2: Pay minting fee
-      const feeTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
-        sender: activeAddress!,
-        receiver: FEE_RECEIVER,
-        amount: FEE_AMOUNT,
-        assetIndex: TEST_USD_ID,
-        suggestedParams: params,
-      })
-
-      // Group and sign
-      const txns = [nftTxn, feeTxn]
-      algosdk.assignGroupID(txns)
-      const encodedTxns = txns.map((t) => algosdk.encodeUnsignedTransaction(t))
-      const signed = await signTransactions(encodedTxns)
-      const validSigned = signed.filter((s): s is Uint8Array => s !== null)
-      if (validSigned.length !== txns.length) throw new Error('Transaction signing failed.')
-
-      // Send
-      const { txid } = await algodClient.sendRawTransaction(validSigned).do()
-      const confirmed = await algosdk.waitForConfirmation(algodClient, txid, 4)
+      const signedNft = await signTransactions([algosdk.encodeUnsignedTransaction(nftTxn)])
+      if (!signedNft[0]) throw new Error('NFT transaction signing failed.')
+      const { txid: nftTxid } = await algodClient.sendRawTransaction(signedNft[0]).do()
+      const confirmed = await algosdk.waitForConfirmation(algodClient, nftTxid, 4)
 
       const assetID =
         (confirmed as any)['asset-index'] || (confirmed as any)['assetIndex'] || (confirmed as any)['inner-txns']?.[0]?.['created-asset-id']
 
-      alert(`✅ Degree NFT minted!\nTransaction ID: ${txid}\nAsset ID: ${assetID}`)
+      alert(`✅ Degree NFT minted!\nFee Tx ID: ${feeTxid}\nNFT Tx ID: ${nftTxid}\nAsset ID: ${assetID}`)
       goBack()
     } catch (err) {
       alert('❌ Failed to mint degree NFT.')
