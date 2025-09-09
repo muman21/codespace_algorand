@@ -2,11 +2,7 @@ import { useState, useEffect } from 'react'
 import algosdk from 'algosdk'
 
 // Registered institutions
-const registeredInstitutions: { wallet: string; name: string }[] = [
-  { wallet: 'M62NKUYCQT2ESAMEOSGJPTNFCEESEPKJAMSQCPCYNMFJQ4N7VSSKKS6EAM', name: 'Darul Uloom Memon' },
-  { wallet: '37IWAMOV226G32SEBQEDGAK6HQAB5QNXAHWITB2BYLFLECG3OMEFIN77QI', name: 'SMIU' },
-  { wallet: 'BY5TDHHKSB224JZVCNEEEVADRK7FWYKJAOCKB3KZYAVRL6QZW6OYAVK5NM', name: 'ABC University' },
-]
+import { registeredInstitutions } from '../utils/registeredinstitutions'
 
 type VerifyDegreeFormProps = {
   wallet: { wallet: string; name: string } | null
