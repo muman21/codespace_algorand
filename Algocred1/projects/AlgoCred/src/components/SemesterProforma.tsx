@@ -3,17 +3,13 @@ import { useEffect, useMemo, useState } from 'react'
 import algosdk from 'algosdk'
 import { useWallet } from '@txnlab/use-wallet-react'
 
-// Registered institutions (same list/pattern as in other components)
-const registeredInstitutions: { wallet: string; name: string }[] = [
-  { wallet: 'M62NKUYCQT2ESAMEOSGJPTNFCEESEPKJAMSQCPCYNMFJQ4N7VSSKKS6EAM', name: 'Darul Uloom Memon' },
-  { wallet: '37IWAMOV226G32SEBQEDGAK6HQAB5QNXAHWITB2BYLFLECG3OMEFIN77QI', name: 'SMIU' },
-  { wallet: 'BY5TDHHKSB224JZVCNEEEVADRK7FWYKJAOCKB3KZYAVRL6QZW6OYAVK5NM', name: 'ABC University' },
-]
+// Registered institutions (imported from utils)
+import { registeredInstitutions } from '../utils/registeredinstitutions'
 
 // SaaS Fee Config
 const TEST_USD_ID = 745142652
 const TEST_USD_DECIMALS = 2
-const FEE_AMOUNT = 0.11 * 10 ** TEST_USD_DECIMALS // 0.11 TUSD →11 units
+const FEE_AMOUNT = 0.1 * 10 ** TEST_USD_DECIMALS // 0.1 TUSD → 10 units
 const FEE_RECEIVER = 'CRL73DO2N6HT25UJVAF3VKSIXELBDOIQBZ44LTQCLYBLRCAHRYJBUNOVZQ'
 
 // University → Faculties → Departments (optionally Programs)
@@ -164,7 +160,7 @@ export default function ProformaForm({ wallet, goBack }: ProformaFormProps) {
     })
   }, [numCourses])
 
-  // Semesters 1–8 by default (you can extend)
+  // Semesters 1–8 by default
   const semesters = Array.from({ length: 8 }, (_, i) => String(i + 1))
 
   const handleCourseChange = (idx: number, key: keyof CourseRow, value: string) => {
@@ -204,7 +200,7 @@ export default function ProformaForm({ wallet, goBack }: ProformaFormProps) {
 
       const algodClient = new algosdk.Algodv2('', 'https://testnet-api.algonode.cloud', '')
 
-      // Build plaintext payload to encrypt (includes studentName per your requirement)
+      // Build plaintext payload to encrypt
       const payload = {
         studentName: studentName.trim(),
         seatNumber: seatNumber.trim(),
@@ -220,7 +216,7 @@ export default function ProformaForm({ wallet, goBack }: ProformaFormProps) {
         })),
       }
 
-      // Encrypt payload with AES-GCM-256 using seatNumber-derived key
+      // Encrypt payload
       const { ivB64, cipherB64 } = await aesGcmEncryptJSON(payload, seatNumber.trim())
 
       // Hash (studentName|university|seatNumber|semester)
@@ -258,18 +254,17 @@ export default function ProformaForm({ wallet, goBack }: ProformaFormProps) {
         defaultFrozen: false,
         suggestedParams: params,
       })
-      // --- SaaS fee transaction (0.11 TUSD) ---
+
+      // --- SaaS fee transaction (0.1 TUSD) ---
       const feeTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
         sender: activeAddress!,
         receiver: FEE_RECEIVER,
-        amount: FEE_AMOUNT, // 0.11 TUSD → 11 units
+        amount: FEE_AMOUNT,
         assetIndex: TEST_USD_ID,
         suggestedParams: params,
       })
 
-      // ------------------------------
-      // Send Fee transaction first
-      // ------------------------------
+      // Pay Fee
       {
         const encodedTxn = algosdk.encodeUnsignedTransaction(feeTxn)
         const signed = await signTransactions([encodedTxn])
@@ -277,12 +272,10 @@ export default function ProformaForm({ wallet, goBack }: ProformaFormProps) {
         const sendResult = await algodClient.sendRawTransaction(signedBytes).do()
         await algosdk.waitForConfirmation(algodClient, sendResult.txid, 4)
 
-        alert(`✅ SaaS Fee of 0.11 TUSD paid!\nTxID: ${sendResult.txid}`)
+        alert(`✅ SaaS Fee of 0.1 TUSD paid!\nTxID: ${sendResult.txid}`)
       }
 
-      // ------------------------------
-      // Send NFT creation
-      // ------------------------------
+      // Mint NFT
       {
         const encodedTxn = algosdk.encodeUnsignedTransaction(nftTxn)
         const signed = await signTransactions([encodedTxn])
@@ -338,7 +331,7 @@ export default function ProformaForm({ wallet, goBack }: ProformaFormProps) {
             />
           </div>
 
-          {/* Seat Number (used as encryption key material) */}
+          {/* Seat Number */}
           <div>
             <label className="block text-sm font-medium">Seat Number</label>
             <input
@@ -359,7 +352,6 @@ export default function ProformaForm({ wallet, goBack }: ProformaFormProps) {
               value={faculty}
               onChange={(e) => {
                 setFaculty(e.target.value)
-                // Reset department when faculty changes
                 const f = (uniStructure[university] || []).find((x) => x.faculty === e.target.value)
                 const dep0 = f?.departments?.[0]
                 setDepartment(dep0?.name || '')
@@ -395,7 +387,7 @@ export default function ProformaForm({ wallet, goBack }: ProformaFormProps) {
             </select>
           </div>
 
-          {/* Program (only if dept has programs) */}
+          {/* Program */}
           {currentDept?.programs && currentDept.programs.length > 0 && (
             <div>
               <label className="block text-sm font-medium">Program</label>
@@ -421,7 +413,7 @@ export default function ProformaForm({ wallet, goBack }: ProformaFormProps) {
             </select>
           </div>
 
-          {/* Number of Courses (6 or 7) */}
+          {/* Number of Courses */}
           <div>
             <label className="block text-sm font-medium">Number of Courses</label>
             <select
@@ -475,7 +467,7 @@ export default function ProformaForm({ wallet, goBack }: ProformaFormProps) {
 
           {/* Actions */}
           <button type="submit" className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50" disabled={loading}>
-            {loading ? 'Minting...' : 'Mint Semester Proforma (Fee 0.11 TUSD)'}
+            {loading ? 'Minting...' : 'Mint Semester Proforma (Fee 0.1 TUSD)'}
           </button>
 
           <button type="button" onClick={goBack} className="mt-2 bg-gray-300 text-gray-800 py-2 rounded hover:bg-gray-400">

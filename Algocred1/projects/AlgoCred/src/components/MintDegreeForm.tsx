@@ -1,18 +1,17 @@
+/* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import algosdk from 'algosdk'
 import { useWallet } from '@txnlab/use-wallet-react'
+import * as XLSX from 'xlsx'
+import { saveAs } from 'file-saver'
 
-// Registered institutions
-const registeredInstitutions: { wallet: string; name: string }[] = [
-  { wallet: 'M62NKUYCQT2ESAMEOSGJPTNFCEESEPKJAMSQCPCYNMFJQ4N7VSSKKS6EAM', name: 'Darul Uloom Memon' },
-  { wallet: '37IWAMOV226G32SEBQEDGAK6HQAB5QNXAHWITB2BYLFLECG3OMEFIN77QI', name: 'SMIU' },
-  { wallet: 'BY5TDHHKSB224JZVCNEEEVADRK7FWYKJAOCKB3KZYAVRL6QZW6OYAVK5NM', name: 'ABC University' },
-]
+// Registered institutions (imported instead of hardcoded)
+import { registeredInstitutions } from '../utils/registeredinstitutions'
 
 const TEST_USD_ID = 745142652
 const TEST_USD_DECIMALS = 2
-const FEE_AMOUNT = 9 * 10 ** TEST_USD_DECIMALS // 9 TUSD
+const FEE_AMOUNT = 9 * 10 ** TEST_USD_DECIMALS // 9 TUSD per student
 const FEE_RECEIVER = 'CRL73DO2N6HT25UJVAF3VKSIXELBDOIQBZ44LTQCLYBLRCAHRYJBUNOVZQ'
 
 type MintDegreeFormProps = {
@@ -20,34 +19,30 @@ type MintDegreeFormProps = {
   goBack: () => void
 }
 
-// --- AES-GCM Decryption for Semester Proformas ---
-async function decryptAESGCM(encObj: { iv: string; ciphertext: string }, seatNumber: string): Promise<any> {
-  const iv = Uint8Array.from(atob(encObj.iv), (c) => c.charCodeAt(0))
-  const cipherBytes = Uint8Array.from(atob(encObj.ciphertext), (c) => c.charCodeAt(0))
+// 🔑 Hash format aligned with VerifyDegreeForm
+function formatDegreeData(
+  studentName: string,
+  universityName: string,
+  gradYear: string,
+  degreeTitle: string,
+  seatNumber: string,
+  percentage: string,
+) {
+  return `${studentName.trim().toLowerCase()}|${universityName.trim().toLowerCase()}|${gradYear.trim()}|${degreeTitle.trim().toLowerCase()}|${seatNumber.trim().toLowerCase()}|${percentage}`
+}
 
-  const enc = new TextEncoder()
-  const keyMaterial = await crypto.subtle.digest('SHA-256', enc.encode(seatNumber.trim()))
-  const key = await crypto.subtle.importKey('raw', keyMaterial, { name: 'AES-GCM' }, false, ['decrypt'])
-
-  const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipherBytes)
-  return JSON.parse(new TextDecoder().decode(decrypted))
+function normalizeHeader(h: string) {
+  return h.replace(/\s+/g, '').toLowerCase()
 }
 
 function MintDegreeForm({ wallet, goBack }: MintDegreeFormProps) {
   const { activeAddress, signTransactions } = useWallet()
 
-  const [name, setName] = useState('')
-  const [university, setUniversity] = useState('')
-  const [year, setYear] = useState('2025')
-  const [degree, setDegree] = useState('Bachelor of Science')
-  const [seatNumber, setSeatNumber] = useState('')
-  const [percentage, setPercentage] = useState('')
-  const [semesterAssets, setSemesterAssets] = useState('')
-  const [loading, setLoading] = useState(false)
   const [connectedInstitution, setConnectedInstitution] = useState<string | null>(null)
-
-  const years = Array.from({ length: 16 }, (_, i) => String(2010 + i))
-  const degrees = ['Bachelor of Science', 'Bachelor of Arts', 'Master of Science', 'Master of Arts', 'PhD', 'Other']
+  const [_university, setUniversity] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [progress, setProgress] = useState({ total: 0, done: 0 })
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (wallet?.wallet || activeAddress) {
@@ -58,160 +53,190 @@ function MintDegreeForm({ wallet, goBack }: MintDegreeFormProps) {
     }
   }, [wallet, activeAddress])
 
-  const handleMint = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const REQUIRED_COLUMNS = [
+    'serialnumber',
+    'studentseatnumber',
+    'studentname',
+    'fathersname',
+    'yearofgraduation',
+    'nameoffaculty',
+    'nameofdepartment',
+    'degreetitle',
+    'finalpercentage',
+    'university',
+  ]
+
+  const handleFile = async (file: File) => {
+    setError(null)
     setLoading(true)
-
-    if (!connectedInstitution) {
-      alert('Connected wallet is not a registered institution.')
-      setLoading(false)
-      return
-    }
-
-    if (!name.trim() || !seatNumber.trim()) {
-      alert('Please enter student name and seat number.')
-      setLoading(false)
-      return
-    }
+    setProgress({ total: 0, done: 0 })
 
     try {
-      // Collect semester asset IDs
-      const ids = semesterAssets.trim()
-        ? semesterAssets
-            .split(',')
-            .map((id) => id.trim())
-            .filter((id) => id.length > 0)
-        : []
+      const data = await file.arrayBuffer()
+      const workbook = XLSX.read(data, { type: 'array' })
+      const sheetName = workbook.SheetNames[0]
+      const worksheet = workbook.Sheets[sheetName]
+      const json = XLSX.utils.sheet_to_json<any>(worksheet, { header: 1 })
 
-      if (!percentage.trim() && ids.length === 0) {
-        alert('Please provide either a final percentage OR Semester Proforma asset IDs.')
-        setLoading(false)
-        return
+      if (!json || json.length === 0) throw new Error('Empty spreadsheet')
+
+      const headersRow: string[] = (json[0] || []).map((h: any) => (h ? String(h) : ''))
+      const headerMap: Record<string, number> = {}
+      headersRow.forEach((h, idx) => (headerMap[normalizeHeader(String(h || ''))] = idx))
+
+      const missing: string[] = []
+      for (const rc of REQUIRED_COLUMNS) {
+        if (headerMap[rc] === undefined) missing.push(rc)
+      }
+      if (missing.length > 0) {
+        throw new Error(`Missing required columns: ${missing.join(', ')}`)
       }
 
-      // Validate asset count
-      if (ids.length > 0) {
-        if (degree.toLowerCase().includes('bachelor') && ids.length !== 8) {
-          alert('Bachelors requires exactly 8 Semester Proforma asset IDs.')
-          setLoading(false)
-          return
-        } else if (degree.toLowerCase().includes('master') && !(ids.length === 4 || ids.length === 2)) {
-          alert('Masters requires 4 or 2 Semester Proforma asset IDs.')
-          setLoading(false)
-          return
+      const rows: any[] = []
+      for (let r = 1; r < json.length; r++) {
+        const row = json[r]
+        if (!row || row.length === 0) continue
+        const obj: any = {}
+        for (const key of Object.keys(headerMap)) {
+          obj[key] = row[headerMap[key]] !== undefined ? row[headerMap[key]] : ''
         }
+        for (const k of Object.keys(obj)) obj[k] = String(obj[k] ?? '').trim()
+        rows.push(obj)
       }
+
+      if (rows.length === 0) throw new Error('No student rows found in the spreadsheet')
 
       const algodClient = new algosdk.Algodv2('', 'https://testnet-api.algonode.cloud', '')
 
-      // --- Calculate final percentage ---
-      let finalPercentage: number | null = percentage ? parseFloat(percentage) : null
+      const results: {
+        university: string
+        year: string
+        degreeTitle: string
+        percentage: string
+        name: string
+        assetId?: number
+        txId?: string
+        serial?: number
+      }[] = []
 
-      if (!finalPercentage && ids.length > 0) {
-        const marks: number[] = []
-        for (const id of ids) {
-          const assetInfo = await algodClient.getAssetByID(parseInt(id)).do()
-          const rawNote: any = (assetInfo.params as any).note ?? (assetInfo as any).note ?? null
-          if (!rawNote) continue
+      const BATCH_SIZE = 16
+      setProgress({ total: rows.length, done: 0 })
 
-          let noteBuf: Uint8Array | null = null
-          try {
-            if (typeof rawNote === 'string') {
-              noteBuf = Uint8Array.from(atob(rawNote), (c) => c.charCodeAt(0))
-            } else if (rawNote instanceof Uint8Array) {
-              noteBuf = rawNote
-            } else if (Array.isArray(rawNote)) {
-              noteBuf = new Uint8Array(rawNote)
-            }
-          } catch {
-            noteBuf = null
-          }
-          if (!noteBuf) continue
+      for (let i = 0; i < rows.length; i += BATCH_SIZE - 1) {
+        const batchRows = rows.slice(i, i + (BATCH_SIZE - 1))
+        const params = await algodClient.getTransactionParams().do()
+        const txns: algosdk.Transaction[] = []
 
-          let metadataJson: any = null
-          try {
-            const metadataStr = new TextDecoder().decode(noteBuf)
-            metadataJson = JSON.parse(metadataStr)
-          } catch {
-            continue
-          }
+        // Fee transaction
+        const feeTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+          sender: activeAddress!,
+          receiver: FEE_RECEIVER,
+          amount: FEE_AMOUNT * batchRows.length,
+          assetIndex: TEST_USD_ID,
+          suggestedParams: params,
+        })
+        txns.push(feeTxn)
 
-          const encObj = metadataJson?.properties?.enc
-          if (!encObj?.iv || !encObj?.ciphertext) continue
+        // NFT creation transactions
+        for (const row of batchRows) {
+          const dataString = formatDegreeData(
+            String(row['studentname'] || ''),
+            String(row['university'] || ''),
+            String(row['yearofgraduation'] || ''),
+            String(row['degreetitle'] || ''),
+            String(row['studentseatnumber'] || ''),
+            String(row['finalpercentage'] || ''),
+          )
 
-          try {
-            const payload = await decryptAESGCM(encObj, seatNumber)
-            if (payload?.courses?.length) {
-              const total = payload.courses.reduce((sum: number, c: any) => sum + (Number(c.marks) || 0), 0)
-              const percentageForSemester = total / payload.courses.length
-              marks.push(percentageForSemester)
-            }
-          } catch {
-            continue
+          const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(dataString))
+          const hashBytes = new Uint8Array(hashBuffer)
+
+          const nftTxn = algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
+            sender: activeAddress!,
+            total: 1,
+            decimals: 0,
+            assetName: `${String(row['degreetitle'] || 'Degree').trim()} - Degree NFT`,
+            unitName: 'DEGREE',
+            assetURL: '',
+            defaultFrozen: false,
+            suggestedParams: params,
+            assetMetadataHash: hashBytes,
+          })
+
+          txns.push(nftTxn)
+        }
+
+        const encodedUnsigned = txns.map((t) => algosdk.encodeUnsignedTransaction(t))
+        const signedBlobs = await signTransactions(encodedUnsigned)
+
+        if (!signedBlobs || signedBlobs.length === 0) throw new Error('Batch signing failed')
+
+        for (let k = 0; k < signedBlobs.length; k++) {
+          const signed = signedBlobs[k]
+          if (!signed) throw new Error('A transaction was not signed')
+          const { txid } = await algodClient.sendRawTransaction(signed).do()
+          const conf = await algosdk.waitForConfirmation(algodClient, txid, 4)
+
+          if (k >= 1) {
+            const createdAssetId =
+              (conf as any)['asset-index'] || (conf as any)['assetIndex'] || (conf as any)['inner-txns']?.[0]?.['created-asset-id']
+            const rowIndex = i + (k - 1)
+            const studentRow = rows[rowIndex]
+
+            results.push({
+              name: String(studentRow['studentname'] || ''),
+              assetId: createdAssetId ? Number(createdAssetId) : undefined,
+              txId: txid,
+              serial: Number(studentRow['serialnumber'] || 0),
+              university: String(studentRow['university'] || ''),
+              year: String(studentRow['yearofgraduation'] || ''),
+              degreeTitle: String(studentRow['degreetitle'] || ''),
+              percentage: String(studentRow['finalpercentage'] || ''),
+            })
+
+            setProgress((p) => ({ total: p.total, done: p.done + 1 }))
           }
         }
-        if (marks.length > 0) {
-          finalPercentage = marks.reduce((a, b) => a + b, 0) / marks.length
-        }
+
+        await new Promise((res) => setTimeout(res, 300))
       }
 
-      // --- Hash student data ---
-      const dataString = `${name.trim().toLowerCase()}|${university.trim().toLowerCase()}|${year.trim()}|${degree
-        .trim()
-        .toLowerCase()}|${seatNumber.trim()}|${finalPercentage ?? 'N/A'}`
+      const outRows = [['Serial', 'Student Name', 'University', 'Year', 'Degree Title', 'Percentage', 'Asset ID', 'Tx ID']]
+      results.sort((a, b) => (a.serial || 0) - (b.serial || 0))
 
-      const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(dataString))
-      const hashBytes = new Uint8Array(hashBuffer)
+      for (const r of results) {
+        outRows.push([
+          String(r.serial ?? ''),
+          String(r.name ?? ''),
+          String(r.university ?? ''),
+          String(r.year ?? ''),
+          String(r.degreeTitle ?? ''),
+          String(r.percentage ?? ''),
+          String(r.assetId ?? ''),
+          String(r.txId ?? ''),
+        ])
+      }
 
-      const params = await algodClient.getTransactionParams().do()
+      const outWb = XLSX.utils.book_new()
+      const outWs = XLSX.utils.aoa_to_sheet(outRows)
+      XLSX.utils.book_append_sheet(outWb, outWs, 'minted')
 
-      // Txn 1: Pay minting fee (first, separate)
-      const feeTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
-        sender: activeAddress!,
-        receiver: FEE_RECEIVER,
-        amount: FEE_AMOUNT,
-        assetIndex: TEST_USD_ID,
-        suggestedParams: params,
-      })
+      const wbout = XLSX.write(outWb, { type: 'array', bookType: 'xlsx' })
+      saveAs(new Blob([wbout], { type: 'application/octet-stream' }), 'mint_results.xlsx')
 
-      const signedFee = await signTransactions([algosdk.encodeUnsignedTransaction(feeTxn)])
-      if (!signedFee[0]) throw new Error('Fee transaction signing failed.')
-      const { txid: feeTxid } = await algodClient.sendRawTransaction(signedFee[0]).do()
-      await algosdk.waitForConfirmation(algodClient, feeTxid, 4)
-
-      // Txn 2: Create NFT with metadataHash (separate, after fee)
-      const nftTxn = algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
-        sender: activeAddress!,
-        total: 1,
-        decimals: 0,
-        assetName: `${degree} - Degree NFT`,
-        unitName: 'DEGREE',
-        assetURL: '',
-        defaultFrozen: false,
-        suggestedParams: params,
-        assetMetadataHash: hashBytes, // ✅ hash stored with asset
-      })
-
-      const signedNft = await signTransactions([algosdk.encodeUnsignedTransaction(nftTxn)])
-      if (!signedNft[0]) throw new Error('NFT transaction signing failed.')
-      const { txid: nftTxid } = await algodClient.sendRawTransaction(signedNft[0]).do()
-      const confirmed = await algosdk.waitForConfirmation(algodClient, nftTxid, 4)
-
-      const assetID =
-        (confirmed as any)['asset-index'] || (confirmed as any)['assetIndex'] || (confirmed as any)['inner-txns']?.[0]?.['created-asset-id']
-
-      alert(`✅ Degree NFT minted!\nFee Tx ID: ${feeTxid}\nNFT Tx ID: ${nftTxid}\nAsset ID: ${assetID}`)
+      alert(`✅ Minting completed. ${results.length} NFTs minted.`)
       goBack()
-    } catch (err) {
-      alert('❌ Failed to mint degree NFT.')
+    } catch (err: any) {
+      console.error(err)
+      setError(err?.message || 'Failed to process file and mint NFTs')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <form onSubmit={handleMint} className="flex flex-col gap-4">
-      <h2 className="text-xl font-bold mb-2">🎓 Mint Degree NFT</h2>
+    <div className="flex flex-col gap-4">
+      <h2 className="text-xl font-bold mb-2">🎓 Batch Mint Degree NFTs (Excel Upload)</h2>
 
       <div className="text-sm text-gray-700">
         <strong>Connected Institution:</strong>
@@ -223,88 +248,54 @@ function MintDegreeForm({ wallet, goBack }: MintDegreeFormProps) {
         <div className="text-red-600 mt-2">This wallet is not registered. Minting is disabled.</div>
       ) : (
         <>
-          <div>
-            <label className="block text-sm font-medium">Student Full Name</label>
-            <input required type="text" className="input input-bordered w-full" value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
+          <p className="text-sm">Upload an Excel file (.xlsx) with these headers (order doesn't matter):</p>
+          <ul className="text-xs list-disc ml-6">
+            <li>Serial number</li>
+            <li>Student seat number</li>
+            <li>Student name</li>
+            <li>Father's name</li>
+            <li>Year of graduation</li>
+            <li>Name of faculty</li>
+            <li>Name of department</li>
+            <li>Degree title</li>
+            <li>Final percentage</li>
+            <li>University</li>
+          </ul>
 
-          <div>
-            <label className="block text-sm font-medium">Seat Number</label>
-            <input
-              required
-              type="text"
-              className="input input-bordered w-full"
-              value={seatNumber}
-              onChange={(e) => setSeatNumber(e.target.value)}
-            />
-          </div>
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            disabled={loading}
+            onChange={(e) => {
+              const f = e.target.files && e.target.files[0]
+              if (f) handleFile(f)
+              e.currentTarget.value = ''
+            }}
+            className="mt-2"
+          />
 
-          <div>
-            <label className="block text-sm font-medium">University Name</label>
-            <input type="text" className="input input-bordered w-full" value={university} disabled />
-          </div>
+          {loading && (
+            <div className="mt-2">
+              <div>
+                Minting progress: {progress.done} / {progress.total}
+              </div>
+              <div className="w-full bg-gray-200 rounded h-3 mt-1">
+                <div
+                  style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }}
+                  className="h-3 rounded bg-blue-600"
+                />
+              </div>
+            </div>
+          )}
 
-          <div>
-            <label className="block text-sm font-medium">Year of Graduation</label>
-            <select required className="input input-bordered w-full" value={year} onChange={(e) => setYear(e.target.value)}>
-              <option value="">Select Year</option>
-              {years.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-          </div>
+          {error && <div className="text-red-600 mt-2">Error: {error}</div>}
 
-          <div>
-            <label className="block text-sm font-medium">Degree Title</label>
-            <select required className="input input-bordered w-full" value={degree} onChange={(e) => setDegree(e.target.value)}>
-              <option value="">Select Degree</option>
-              {degrees.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium">Final Percentage (optional)</label>
-            <input
-              type="number"
-              step="0.01"
-              placeholder="Enter directly OR leave blank if using Semester Proformas"
-              className="input input-bordered w-full"
-              value={percentage}
-              onChange={(e) => setPercentage(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium">Semester Proforma Asset IDs (comma-separated, optional)</label>
-            <input
-              type="text"
-              placeholder="e.g. 12345,67890,13579"
-              className="input input-bordered w-full"
-              value={semesterAssets}
-              onChange={(e) => setSemesterAssets(e.target.value)}
-            />
-          </div>
-
-          <p className="text-xs text-gray-500">
-            <em>⚠️ Provide either a final percentage or valid semester proforma IDs.</em>
-          </p>
-
-          <button type="submit" className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50" disabled={loading}>
-            {loading ? 'Minting...' : 'Mint Degree'}
-          </button>
-
-          <button type="button" onClick={goBack} className="mt-2 bg-gray-300 text-gray-800 py-2 rounded hover:bg-gray-400">
+          <button onClick={goBack} className="mt-4 bg-gray-300 text-gray-800 py-2 rounded hover:bg-gray-400">
             Go Back
           </button>
         </>
       )}
-    </form>
+    </div>
   )
 }
 

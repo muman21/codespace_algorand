@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import algosdk from 'algosdk'
 
-// Registered institutions
+// Registered institutions (imported instead of hardcoded)
 import { registeredInstitutions } from '../utils/registeredinstitutions'
 
 type VerifyDegreeFormProps = {
@@ -18,7 +18,8 @@ function formatDegreeData(
   seatNumber: string,
   percentage: string,
 ) {
-  return `${studentName.trim().toLowerCase()}|${universityName.trim().toLowerCase()}|${gradYear.trim()}|${degreeTitle.trim().toLowerCase()}|${seatNumber.trim().toLowerCase()}|${percentage.trim()}`
+  // EXACTLY same processing as minting
+  return `${studentName.trim().toLowerCase()}|${universityName.trim().toLowerCase()}|${gradYear.trim()}|${degreeTitle.trim().toLowerCase()}|${seatNumber.trim().toLowerCase()}|${percentage}`
 }
 
 function VerifyDegreeForm({ wallet, goBack }: VerifyDegreeFormProps) {
@@ -34,7 +35,7 @@ function VerifyDegreeForm({ wallet, goBack }: VerifyDegreeFormProps) {
   const [connectedInstitution, setConnectedInstitution] = useState<string | null>(null)
 
   const years = Array.from({ length: 16 }, (_, i) => String(2010 + i))
-  const degrees = ['Bachelor of Science', 'Bachelor of Arts', 'Master of Science', 'Master of Arts', 'PhD', 'Other']
+  const degrees = ['Bachelor of Science', 'Bachelor of Arts', 'BS Maths', 'Master of Science', 'Master of Arts', 'PhD', 'Other']
 
   useEffect(() => {
     if (wallet?.wallet) {
