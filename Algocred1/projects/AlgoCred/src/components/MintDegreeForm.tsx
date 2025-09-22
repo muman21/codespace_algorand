@@ -63,7 +63,6 @@ function MintDegreeForm({ wallet, goBack }: MintDegreeFormProps) {
     'nameofdepartment',
     'degreetitle',
     'finalpercentage',
-    'university',
   ]
 
   const handleFile = async (file: File) => {
@@ -101,6 +100,13 @@ function MintDegreeForm({ wallet, goBack }: MintDegreeFormProps) {
           obj[key] = row[headerMap[key]] !== undefined ? row[headerMap[key]] : ''
         }
         for (const k of Object.keys(obj)) obj[k] = String(obj[k] ?? '').trim()
+
+        // ✅ Check for any empty field in the row
+        const emptyFields = Object.entries(obj).filter(([_, val]) => val === '')
+        if (emptyFields.length > 0) {
+          throw new Error(`Row ${r + 1} has empty fields: ${emptyFields.map(([k]) => k).join(', ')}`)
+        }
+
         rows.push(obj)
       }
 
@@ -141,7 +147,7 @@ function MintDegreeForm({ wallet, goBack }: MintDegreeFormProps) {
         for (const row of batchRows) {
           const dataString = formatDegreeData(
             String(row['studentname'] || ''),
-            String(row['university'] || ''),
+            connectedInstitution || '',
             String(row['yearofgraduation'] || ''),
             String(row['degreetitle'] || ''),
             String(row['studentseatnumber'] || ''),
@@ -188,7 +194,7 @@ function MintDegreeForm({ wallet, goBack }: MintDegreeFormProps) {
               assetId: createdAssetId ? Number(createdAssetId) : undefined,
               txId: txid,
               serial: Number(studentRow['serialnumber'] || 0),
-              university: String(studentRow['university'] || ''),
+              university: connectedInstitution || '',
               year: String(studentRow['yearofgraduation'] || ''),
               degreeTitle: String(studentRow['degreetitle'] || ''),
               percentage: String(studentRow['finalpercentage'] || ''),
@@ -259,7 +265,6 @@ function MintDegreeForm({ wallet, goBack }: MintDegreeFormProps) {
             <li>Name of department</li>
             <li>Degree title</li>
             <li>Final percentage</li>
-            <li>University</li>
           </ul>
 
           <input
