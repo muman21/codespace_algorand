@@ -5,12 +5,10 @@ import MintDegreeForm from './components/MintDegreeForm'
 import VerifyDegreeForm from './components/VerifyDegreeForm'
 import ProformaForm from './components/SemesterProforma'
 import PrintProforma from './components/PrintProforma'
+import PrintMarksheet from './components/PrintMarksheet'
 
-const registeredInstitutions: { wallet: string; name: string }[] = [
-  { wallet: 'M62NKUYCQT2ESAMEOSGJPTNFCEESEPKJAMSQCPCYNMFJQ4N7VSSKKS6EAM', name: 'Darul Uloom Memon' },
-  { wallet: '37IWAMOV226G32SEBQEDGAK6HQAB5QNXAHWITB2BYLFLECG3OMEFIN77QI', name: 'SMIU' },
-  { wallet: 'BY5TDHHKSB224JZVCNEEEVADRK7FWYKJAOCKB3KZYAVRL6QZW6OYAVK5NM', name: 'ABC University' },
-]
+// ✅ Import registered institutions (centralized)
+import { registeredInstitutions } from './utils/registeredinstitutions'
 
 const Home: React.FC = () => {
   const { activeAddress } = useWallet()
@@ -19,13 +17,14 @@ const Home: React.FC = () => {
   const [showVerify, setShowVerify] = useState(false)
   const [showProforma, setShowProforma] = useState(false)
   const [showPrintProforma, setShowPrintProforma] = useState(false)
+  const [showPrintMarksheet, setShowPrintMarksheet] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
-  // Match wallet to institution
+  // ✅ Match wallet to registered institution
   const matchedInstitution =
     registeredInstitutions.find((inst) => inst.wallet.toLowerCase() === (activeAddress || '').toLowerCase()) || null
 
-  // Reusable Modal Component with scrollable content
+  // ✅ Reusable Modal Component
   const Modal: React.FC<{ open: boolean; onClose: () => void; title: string; children: React.ReactNode }> = ({
     open,
     onClose,
@@ -95,6 +94,15 @@ const Home: React.FC = () => {
                   }}
                 >
                   Print Semester Proforma
+                </button>
+                <button
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700"
+                  onClick={() => {
+                    setShowPrintMarksheet(true)
+                    setMenuOpen(false)
+                  }}
+                >
+                  Print Marksheet
                 </button>
                 <button
                   className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700"
@@ -233,18 +241,13 @@ const Home: React.FC = () => {
         <PrintProforma />
       </Modal>
 
+      <Modal open={showPrintMarksheet} onClose={() => setShowPrintMarksheet(false)} title="Print Marksheet">
+        <PrintMarksheet />
+      </Modal>
+
+      {/* ✅ Verify Degree works without wallet connection */}
       <Modal open={showVerify} onClose={() => setShowVerify(false)} title="Verify a Degree">
-        {!activeAddress && (
-          <div className="bg-white bg-opacity-80 flex items-center justify-center rounded-xl mb-4">
-            <p className="text-gray-600 font-medium">Please connect your wallet to continue.</p>
-          </div>
-        )}
-        <div className={activeAddress ? '' : 'pointer-events-none opacity-30'}>
-          <VerifyDegreeForm
-            goBack={() => setShowVerify(false)}
-            wallet={activeAddress ? { wallet: activeAddress, name: 'Connected Wallet' } : null}
-          />
-        </div>
+        <VerifyDegreeForm goBack={() => setShowVerify(false)} />
       </Modal>
     </div>
   )

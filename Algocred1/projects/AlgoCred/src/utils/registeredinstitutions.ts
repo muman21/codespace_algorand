@@ -18,4 +18,8 @@ export const registeredInstitutions: Institution[] = [
     wallet: 'BY5TDHHKSB224JZVCNEEEVADRK7FWYKJAOCKB3KZYAVRL6QZW6OYAVK5NM',
     name: 'ABC University',
   },
+  {
+    wallet: 'FEYL3CZYH4MIILAD2S76YMQQOVLRCGWO4VFNLX3KCRG4WLAC7FAYDWJKVA',
+    name: 'XYZ University',
+  },
 ]
