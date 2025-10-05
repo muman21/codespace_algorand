@@ -2,11 +2,8 @@ import { useWallet } from '@txnlab/use-wallet-react'
 import Account from './Account'
 import { useMemo, useEffect } from 'react'
 
-const registeredInstitutions: { wallet: string; name: string }[] = [
-  { wallet: 'M62NKUYCQT2ESAMEOSGJPTNFCEESEPKJAMSQCPCYNMFJQ4N7VSSKKS6EAM', name: 'Darul Uloom Memon' },
-  { wallet: '37IWAMOV226G32SEBQEDGAK6HQAB5QNXAHWITB2BYLFLECG3OMEFIN77QI', name: 'SMIU' },
-  { wallet: 'BY5TDHHKSB224JZVCNEEEVADRK7FWYKJAOCKB3KZYAVRL6QZW6OYAVK5NM', name: 'ABC University' },
-]
+// ✅ Import from utils instead of hardcoding
+import { registeredInstitutions } from '../utils/registeredinstitutions'
 
 interface ConnectWalletInterface {
   openModal: boolean
@@ -17,6 +14,7 @@ interface ConnectWalletInterface {
 const ConnectWallet = ({ openModal, closeModal, setConnectedInstitution }: ConnectWalletInterface) => {
   const { wallets, activeAddress } = useWallet()
 
+  // ✅ Use the imported registeredInstitutions instead of hardcoded array
   const matchedInstitution = useMemo(() => {
     if (!activeAddress) return null
     return registeredInstitutions.find((inst) => inst.wallet.toLowerCase() === activeAddress.toLowerCase()) || null
@@ -28,13 +26,8 @@ const ConnectWallet = ({ openModal, closeModal, setConnectedInstitution }: Conne
 
   const institutionName = matchedInstitution?.name || 'Not Recognised'
 
-  // Find the currently connected wallet instance by matching activeAddress
-
-  // Because wallet.accounts may be undefined, fallback:
-  // You can just pick first wallet with .connected === true as activeWallet:
   const connectedWallet = wallets?.find((wallet) => wallet.connect) || null
 
-  // On Disconnect click:
   const handleDisconnect = () => {
     if (connectedWallet && connectedWallet.disconnect) {
       connectedWallet.disconnect()
