@@ -12,7 +12,7 @@ export const registeredInstitutions: Institution[] = [
   },
   {
     wallet: '37IWAMOV226G32SEBQEDGAK6HQAB5QNXAHWITB2BYLFLECG3OMEFIN77QI',
-    name: 'SMIU',
+    name: 'Sindh Madressatul Islam Univeristy',
   },
   {
     wallet: 'BY5TDHHKSB224JZVCNEEEVADRK7FWYKJAOCKB3KZYAVRL6QZW6OYAVK5NM',

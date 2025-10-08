@@ -166,6 +166,8 @@ export default function SemesterProformaBatchMint({ wallet, goBack }: Props) {
         })
         txns.push(feeTxn)
 
+        const batchAssetNames: string[] = [] // store asset names aligned with transactions
+
         for (const row of batchRows) {
           const universityName = connectedInstitution || ''
           const payloadPlain = {
@@ -193,8 +195,23 @@ export default function SemesterProformaBatchMint({ wallet, goBack }: Props) {
             },
           }
 
-          const assetName = `Semester ${String(row['semesternumber']).trim()} Proforma - ${String(row['seatnumber']).trim()}`
-          const unitName = 'PROFRM'
+          // Helper: get initials from university name
+          // eslint-disable-next-line no-inner-declarations
+          function getInitials(name: string): string {
+            return name
+              .split(' ')
+              .map((word) => word[0]?.toUpperCase() || '')
+              .join('')
+          }
+
+          // Compute asset/unit name
+          const uniInitials = getInitials(connectedInstitution || '')
+          const semNum = String(row['semesternumber']).trim()
+          const assetName = `Sem ${semNum} ${uniInitials}`
+          const unitName = `S${semNum}${uniInitials}`
+
+          // store for later use
+          batchAssetNames.push(assetName)
 
           const nftTxn = algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
             sender: activeAddress!,
@@ -212,6 +229,7 @@ export default function SemesterProformaBatchMint({ wallet, goBack }: Props) {
           txns.push(nftTxn)
         }
 
+        // sign all txns
         const encodedUnsigned = txns.map((t) => algosdk.encodeUnsignedTransaction(t))
         const signedBlobs = await signTransactions(encodedUnsigned)
         if (!signedBlobs || signedBlobs.length === 0) throw new Error('Batch signing failed')
@@ -227,6 +245,7 @@ export default function SemesterProformaBatchMint({ wallet, goBack }: Props) {
               (conf as any)['asset-index'] || (conf as any)['assetIndex'] || (conf as any)['inner-txns']?.[0]?.['created-asset-id']
             const rowIndex = i + (k - 1)
             const studentRow = rows[rowIndex]
+            const mintedAssetName = batchAssetNames[k - 1] // ✅ retrieve the stored name
 
             results.push({
               seat: String(studentRow['seatnumber'] || ''),
@@ -236,6 +255,7 @@ export default function SemesterProformaBatchMint({ wallet, goBack }: Props) {
               department: String(studentRow['department'] || ''),
               degreeTitle: String(studentRow['degreetitle'] || ''),
               semester: String(studentRow['semesternumber'] || ''),
+              assetName: mintedAssetName,
               assetId: createdAssetId ? Number(createdAssetId) : undefined,
               txId: txid,
               serial: Number(studentRow['serialnumber'] || 0),
@@ -258,6 +278,7 @@ export default function SemesterProformaBatchMint({ wallet, goBack }: Props) {
           'Department',
           'Degree Title',
           'Semester',
+          'Asset Name',
           'Asset ID',
           'Tx ID',
         ],
@@ -273,6 +294,7 @@ export default function SemesterProformaBatchMint({ wallet, goBack }: Props) {
           String(r.department ?? ''),
           String(r.degreeTitle ?? ''),
           String(r.semester ?? ''),
+          String(r.assetName ?? ''),
           String(r.assetId ?? ''),
           String(r.txId ?? ''),
         ])
