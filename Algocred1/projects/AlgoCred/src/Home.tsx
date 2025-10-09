@@ -166,7 +166,7 @@ const Home: React.FC = () => {
       <section className="py-12 bg-white">
         <div className="flex justify-center">
           <div className="bg-white border-l-4 border-purple-600 p-8 rounded-xl shadow-md w-full sm:w-[28rem] text-center">
-            <img src="/algorand-logo.svg" alt="Algorand Logo" className="h-12 mx-auto mb-4" />
+            <img src="/algo logo.jpg" alt="Algorand Logo" className="h-12 mx-auto mb-4" />
             <h3 className="text-xl font-bold mb-2 text-purple-800">Powered by Algorand</h3>
             <p className="text-gray-700">
               Leveraging Algorand’s secure, scalable, and carbon-negative blockchain to safeguard academic integrity.
