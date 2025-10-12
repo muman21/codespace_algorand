@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import algosdk from 'algosdk'
 import domtoimage from 'dom-to-image-more'
+import { registeredInstitutions } from '../utils/registeredinstitutions' // ✅ Import your registered institutions
 
 // AES Decrypt
 async function deriveAesKeyFromSeat(seatNumber: string): Promise<CryptoKey> {
@@ -111,6 +112,7 @@ export default function PrintProforma() {
   const [seatNumber, setSeatNumber] = useState('')
   const [data, setData] = useState<any | null>(null)
   const [status, setStatus] = useState('')
+  const [institutionName, setInstitutionName] = useState<string>('') // ✅ Store the university name
 
   const handleFetch = async () => {
     try {
@@ -127,6 +129,14 @@ export default function PrintProforma() {
 
       const creationTxn = txns.transactions[0]
       if (!creationTxn.note) throw new Error('No note found in asset creation transaction')
+
+      // ✅ get creator wallet
+      const creatorWallet = creationTxn.sender
+
+      // ✅ find matching institution
+      const institution = registeredInstitutions.find((inst: { wallet: string }) => inst.wallet === creatorWallet)
+      const uniName = institution ? institution.name : 'Unknown Institution'
+      setInstitutionName(uniName)
 
       // decode note
       const noteBuf = noteToArrayBuffer(creationTxn.note)
@@ -149,24 +159,17 @@ export default function PrintProforma() {
     }
   }
 
-  // ...
-
   const handlePrint = async () => {
     try {
       const element = document.getElementById('proforma-card')
       if (!element) throw new Error('Proforma card not found')
 
-      // Generate PNG (scale for higher quality)
       const dataUrl = await domtoimage.toPng(element, {
         quality: 1,
         bgcolor: '#ffffff',
-        style: {
-          backgroundColor: '#ffffff',
-          color: '#000000',
-        },
+        style: { backgroundColor: '#ffffff', color: '#000000' },
       })
 
-      // Trigger download
       const link = document.createElement('a')
       link.href = dataUrl
       link.download = `proforma_${seatNumber}.png`
@@ -197,7 +200,9 @@ export default function PrintProforma() {
       {data && (
         <>
           <div id="proforma-card" className="bg-white shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-center">{data.university}</h2>
+            {/* ✅ University name from wallet */}
+            <h2 className="text-2xl font-bold text-center mb-2">{institutionName}</h2>
+
             <h3 className="text-lg font-semibold text-center mb-4">{data.semester}ᵗʰ Semester Proforma</h3>
             <p>
               <strong>Student:</strong> {data.studentName}

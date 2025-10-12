@@ -28,7 +28,7 @@ async function aesGcmDecryptJSON(ivB64: string, cipherB64: string, seatNumber: s
   return JSON.parse(text)
 }
 
-// CGPA calculator (same as proforma)
+// CGPA calculator
 function calculateCGPA(courses: { marks: number }[]) {
   let totalMarks = 0
   let failed = false
@@ -84,7 +84,7 @@ export default function PrintMarksheet() {
   const [studentName, setStudentName] = useState('')
   const [university, setUniversity] = useState('')
   const [degreeTitle, setDegreeTitle] = useState('')
-  const [assetIds, setAssetIds] = useState('') // comma separated
+  const [assetIds, setAssetIds] = useState('')
   const [semesters, setSemesters] = useState<any[]>([])
   const [status, setStatus] = useState('')
 
@@ -138,18 +138,54 @@ export default function PrintMarksheet() {
     }
   }
 
-  // Degree completion check
+  // Degree completion logic
   const totalSemestersRequired = (() => {
     const d = degreeTitle.toLowerCase()
     if (d.includes('bs') || d.includes('ba') || d.includes('be') || d.includes('bba')) return 8
     if (d.includes('ms') || d.includes('ma') || d.includes('me') || d.includes('mba')) return 4
     if (d.includes('mphil') || d.includes('phd')) return 2
+    if (d.includes('finance') || d.includes('management')) return 2
     return 0
   })()
   const degreeCompleted = semesters.length === totalSemestersRequired
 
+  // Row grouping logic
+  const getRows = (items: any[]) => {
+    const len = items.length
+    const rows: any[][] = []
+
+    if (len <= 3) {
+      rows.push(items.slice(0, len))
+      return rows
+    }
+    if (len === 4) {
+      rows.push(items.slice(0, 2), items.slice(2, 4))
+      return rows
+    }
+    if (len === 5) {
+      rows.push(items.slice(0, 2), items.slice(2, 4), items.slice(4))
+      return rows
+    }
+    if (len === 6) {
+      rows.push(items.slice(0, 3), items.slice(3, 6))
+      return rows
+    }
+    if (len === 7) {
+      rows.push(items.slice(0, 3), items.slice(3, 5), items.slice(5, 7))
+      return rows
+    }
+    if (len >= 8) {
+      rows.push(items.slice(0, 3), items.slice(3, 6), items.slice(6, 8))
+      return rows
+    }
+
+    return [items]
+  }
+
+  const semesterRows = getRows(semesters)
+
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto">
       <h2 className="text-xl font-bold mb-4">🖨 Print Complete Marksheet</h2>
 
       <div className="flex flex-col gap-3 mb-4">
@@ -173,69 +209,70 @@ export default function PrintMarksheet() {
       {semesters.length > 0 && (
         <>
           <div id="marksheet-card" className="bg-white shadow-lg p-6">
-            {/* Header */}
             <h2 className="text-2xl font-bold text-center">{university}</h2>
-            <h3 className="text-lg font-semibold text-center mb-4">
+            <h3 className="text-lg font-semibold text-center mb-6">
               {degreeTitle} {!degreeCompleted && <span>(Ongoing)</span>}
             </h3>
 
-            {/* Tables for each semester */}
-            {semesters.map((sem, idx) => {
-              const { total, percentage } = calculateCGPA(sem.courses)
-              const rounded = Math.round(percentage)
-              return (
-                <div key={idx} className="mb-6">
-                  <h4 className="font-bold text-center mb-2">{sem.semester}ᵗʰ Semester</h4>
-                  <table className="w-full border">
-                    <thead>
-                      <tr className="bg-gray-200">
-                        <th className="border px-2">S#</th>
-                        <th className="border px-2">Course Number</th>
-                        <th className="border px-2">Course Name</th>
-                        <th className="border px-2">Marks</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sem.courses.map((c: any, i: number) => (
-                        <tr key={i}>
-                          <td className="border px-2">{i + 1}</td>
-                          <td className="border px-2">{c.courseNumber}</td>
-                          <td className="border px-2">{c.courseName}</td>
-                          <td className="border px-2">{c.marks}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr>
-                        <td colSpan={3} className="border px-2 font-bold">
-                          Total
-                        </td>
-                        <td className="border px-2">{total}</td>
-                      </tr>
-                      <tr>
-                        <td colSpan={3} className="border px-2 font-bold">
-                          Percentage
-                        </td>
-                        <td className="border px-2">{percentage.toFixed(2)}%</td>
-                      </tr>
-                      <tr>
-                        <td colSpan={4} className="px-2 py-3 italic">
-                          Mr./Ms. {studentName} has secured {numberToWords(rounded)} percent in {sem.semester}ᵗʰ semester.
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              )
-            })}
+            {/* Display semesters in rows */}
+            {semesterRows.map((row, rIdx) => (
+              <div key={rIdx} className={`grid gap-4 mb-4 ${row.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                {row.map((sem, idx) => {
+                  const { total, percentage } = calculateCGPA(sem.courses)
+                  const rounded = Math.round(percentage)
+                  return (
+                    <div key={idx} className="border rounded-xl shadow-md p-3 text-xs">
+                      <h4 className="font-bold text-center mb-2">{sem.semester}ᵗʰ Semester</h4>
+                      <table className="w-full border text-xs">
+                        <thead>
+                          <tr className="bg-gray-200">
+                            <th className="border px-1">#</th>
+                            <th className="border px-1">Course #</th>
+                            <th className="border px-1">Course Name</th>
+                            <th className="border px-1">Marks</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sem.courses.map((c: any, i: number) => (
+                            <tr key={i}>
+                              <td className="border px-1">{i + 1}</td>
+                              <td className="border px-1">{c.courseNumber}</td>
+                              <td className="border px-1">{c.courseName}</td>
+                              <td className="border px-1">{c.marks}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr>
+                            <td colSpan={3} className="border px-1 font-bold">
+                              Total
+                            </td>
+                            <td className="border px-1">{total}</td>
+                          </tr>
+                          <tr>
+                            <td colSpan={3} className="border px-1 font-bold">
+                              %
+                            </td>
+                            <td className="border px-1">{percentage.toFixed(2)}%</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                      <p className="mt-2 italic text-xs">
+                        Mr./Ms. {studentName} secured {numberToWords(rounded)} percent in {sem.semester}ᵗʰ semester.
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+            ))}
 
-            {/* Final Degree Percentage */}
+            {/* Overall summary */}
             {(() => {
               const percentages = semesters.map((s) => calculateCGPA(s.courses).percentage)
               const overall = percentages.reduce((a, b) => a + b, 0) / percentages.length
               const rounded = Math.round(overall)
               return (
-                <div className="mt-6">
+                <div className="mt-6 text-center">
                   <p className="font-bold">Overall Degree Percentage: {overall.toFixed(2)}%</p>
                   <p className="italic">In words: {numberToWords(rounded)} Percent</p>
                   <p className="mt-2">
