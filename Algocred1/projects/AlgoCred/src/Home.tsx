@@ -6,8 +6,7 @@ import VerifyDegreeForm from './components/VerifyDegreeForm'
 import ProformaForm from './components/SemesterProforma'
 import PrintProforma from './components/PrintProforma'
 import PrintMarksheet from './components/PrintMarksheet'
-import PartnerInstitutions from './components/PartnerInstitutions' // ✅ new import
-
+import PartnerInstitutions from './components/PartnerInstitutions'
 import { registeredInstitutions } from './utils/registeredinstitutions'
 
 const Home: React.FC = () => {
@@ -58,58 +57,17 @@ const Home: React.FC = () => {
             >
               Menu
             </button>
+
             {menuOpen && (
-              <div className="absolute left-0 mt-2 w-60 bg-white rounded-lg shadow-lg border z-50">
-                <button className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700" onClick={() => setMenuOpen(false)}>
+              <div className="absolute left-0 mt-2 w-72 bg-white rounded-lg shadow-lg border z-50 text-gray-700">
+                {/* HOME */}
+                <button className="block w-full text-left px-4 py-2 hover:bg-gray-100 font-semibold" onClick={() => setMenuOpen(false)}>
                   Home
                 </button>
+
+                {/* PARTNER INSTITUTIONS */}
                 <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700"
-                  onClick={() => {
-                    setShowMint(true)
-                    setMenuOpen(false)
-                  }}
-                >
-                  Issue Degree
-                </button>
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700"
-                  onClick={() => {
-                    setShowProforma(true)
-                    setMenuOpen(false)
-                  }}
-                >
-                  Issue Semester Proforma
-                </button>
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700"
-                  onClick={() => {
-                    setShowPrintProforma(true)
-                    setMenuOpen(false)
-                  }}
-                >
-                  Print Semester Proforma
-                </button>
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700"
-                  onClick={() => {
-                    setShowPrintMarksheet(true)
-                    setMenuOpen(false)
-                  }}
-                >
-                  Print Marksheet
-                </button>
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700"
-                  onClick={() => {
-                    setShowVerify(true)
-                    setMenuOpen(false)
-                  }}
-                >
-                  Verify Degree
-                </button>
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 font-semibold"
                   onClick={() => {
                     setShowPartners(true)
                     setMenuOpen(false)
@@ -117,6 +75,96 @@ const Home: React.FC = () => {
                 >
                   Partner Institutions
                 </button>
+
+                {/* UNIVERSITY ADMIN DROPDOWN */}
+                <div className="relative border-t my-1">
+                  <div className="px-4 py-2 font-bold text-purple-700 cursor-pointer hover:bg-gray-50 group">
+                    University / مدرسہ Admin ▾
+                    <div className="hidden group-hover:flex flex-col bg-white border rounded-md w-full mt-1 shadow-lg z-50">
+                      <button
+                        className="block w-full text-left px-6 py-2 hover:bg-gray-100"
+                        onClick={() => {
+                          setShowProforma(true)
+                          setMenuOpen(false)
+                        }}
+                      >
+                        Issue Semester Proforma / Transcript
+                      </button>
+                      <button
+                        className="block w-full text-left px-6 py-2 hover:bg-gray-100"
+                        onClick={() => {
+                          setShowMint(true)
+                          setMenuOpen(false)
+                        }}
+                      >
+                        Issue Degree
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* STUDENT PORTAL DROPDOWN */}
+                <div className="relative border-t my-1">
+                  <div className="px-4 py-2 font-bold text-purple-700 cursor-pointer hover:bg-gray-50 group">
+                    Student Portal ▾
+                    <div className="hidden group-hover:flex flex-col bg-white border rounded-md w-full mt-1 shadow-lg z-50">
+                      <button
+                        className="block w-full text-left px-6 py-2 hover:bg-gray-100"
+                        onClick={() => {
+                          setShowPrintProforma(true)
+                          setMenuOpen(false)
+                        }}
+                      >
+                        Print Semester Transcript / Proforma
+                      </button>
+                      <button
+                        className="block w-full text-left px-6 py-2 hover:bg-gray-100"
+                        onClick={() => {
+                          setShowPrintMarksheet(true)
+                          setMenuOpen(false)
+                        }}
+                      >
+                        Print Marksheet
+                      </button>
+                      <button
+                        className="block w-full text-left px-6 py-2 hover:bg-gray-100"
+                        onClick={() => {
+                          alert('Print Degree feature coming soon!')
+                          setMenuOpen(false)
+                        }}
+                      >
+                        Print Degree
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* VERIFICATION PORTAL DROPDOWN */}
+                <div className="relative border-t my-1">
+                  <div className="px-4 py-2 font-bold text-purple-700 cursor-pointer hover:bg-gray-50 group">
+                    Verification Portal ▾
+                    <div className="hidden group-hover:flex flex-col bg-white border rounded-md w-full mt-1 shadow-lg z-50">
+                      <button
+                        className="block w-full text-left px-6 py-2 hover:bg-gray-100"
+                        onClick={() => {
+                          setShowPrintMarksheet(true)
+                          setMenuOpen(false)
+                        }}
+                      >
+                        Verify Marksheet
+                      </button>
+                      <button
+                        className="block w-full text-left px-6 py-2 hover:bg-gray-100"
+                        onClick={() => {
+                          setShowVerify(true)
+                          setMenuOpen(false)
+                        }}
+                      >
+                        Verify Degree
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -132,29 +180,28 @@ const Home: React.FC = () => {
         </button>
       </nav>
 
-      {/* HERO SECTION */}
+      {/* SECTIONS */}
       <section className="bg-gradient-to-r from-green-300 to-green-500 py-20 text-center text-white shadow-md">
         <h2 className="text-4xl font-extrabold mb-4 drop-shadow-lg">Welcome to AlgoCred</h2>
         <p className="text-lg max-w-2xl mx-auto font-medium">
-          A blockchain-based platform for issuing and verifying academic credentials with authenticity, transparency, and global
+          A blockchain-based platform for issuing and verifying academic credentials with authenticity, ZK-transparency, and global
           accessibility.
         </p>
       </section>
 
-      {/* WHY US SECTION */}
-      <section className="bg-gray-50 py-16">
+      <section className="bg-purple-50 py-16">
         <div className="max-w-6xl mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-purple-800 mb-8">Why AlgoCred?</h2>
           <div className="grid md:grid-cols-3 gap-8 text-left">
-            <div className="p-4 border-l-4 border-purple-500">
+            <div className="p-6 bg-white rounded-xl shadow-md border-l-4 border-purple-500">
               <h3 className="font-semibold text-lg mb-2">Tamper-proof Records</h3>
               <p>Academic credentials are immutable digital assets on Algorand.</p>
             </div>
-            <div className="p-4 border-l-4 border-purple-500">
+            <div className="p-6 bg-white rounded-xl shadow-md border-l-4 border-purple-500">
               <h3 className="font-semibold text-lg mb-2">Instant Global Access</h3>
-              <p>Verification can be performed anywhere in the world within seconds.</p>
+              <p>ZK-Verification can be performed anywhere in the world within seconds.</p>
             </div>
-            <div className="p-4 border-l-4 border-purple-500">
+            <div className="p-6 bg-white rounded-xl shadow-md border-l-4 border-purple-500">
               <h3 className="font-semibold text-lg mb-2">Academic Integrity</h3>
               <p>Eliminates fraud and ensures authenticity of issued degrees.</p>
             </div>
@@ -162,10 +209,9 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* POWERED BY ALGORAND */}
-      <section className="py-12 bg-white">
+      <section className="py-16 bg-white">
         <div className="flex justify-center">
-          <div className="bg-white border-l-4 border-purple-600 p-8 rounded-xl shadow-md w-full sm:w-[28rem] text-center">
+          <div className="bg-gray-50 border-l-4 border-purple-600 p-8 rounded-xl shadow-md w-full sm:w-[28rem] text-center">
             <img src="/algo logo.jpg" alt="Algorand Logo" className="h-12 mx-auto mb-4" />
             <h3 className="text-xl font-bold mb-2 text-purple-800">Powered by Algorand</h3>
             <p className="text-gray-700">
@@ -175,12 +221,11 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* CONTACT */}
-      <section className="bg-gray-100 py-12 text-center">
+      <section className="bg-green-100 py-12 text-center">
         <div className="max-w-4xl mx-auto px-4">
           <h2 className="text-2xl font-bold text-purple-700 mb-4">Contact & Support</h2>
           <p className="text-gray-600 mb-6">For demonstrations or inquiries, reach out to our academic support team.</p>
-          <a href="mailto:support@algocred.org" className="btn btn-outline btn-primary">
+          <a href="mailto:lfrostie10@gmail.com" className="btn btn-outline btn-primary">
             Contact Us
           </a>
         </div>
@@ -192,7 +237,7 @@ const Home: React.FC = () => {
         <p className="text-sm mt-2 text-gray-300">© {new Date().getFullYear()} RZ Services. All rights reserved.</p>
       </footer>
 
-      {/* Modals */}
+      {/* MODALS */}
       <ConnectWallet openModal={openWalletModal} closeModal={() => setOpenWalletModal(false)} setConnectedInstitution={() => {}} />
 
       <Modal open={showMint} onClose={() => setShowMint(false)} title="Issue a Degree">
