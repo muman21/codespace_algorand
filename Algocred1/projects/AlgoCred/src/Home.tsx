@@ -20,6 +20,21 @@ const Home: React.FC = () => {
   const [showPartners, setShowPartners] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
+  // Dropdown toggles
+  const [adminDropdownOpen, setAdminDropdownOpen] = useState(false)
+  const [studentDropdownOpen, setStudentDropdownOpen] = useState(false)
+  const [verifyDropdownOpen, setVerifyDropdownOpen] = useState(false)
+  const [adminSubOpen, setAdminSubOpen] = useState<{ madrasa: boolean; university: boolean; school: boolean }>({
+    madrasa: false,
+    university: false,
+    school: false,
+  })
+  const [studentSubOpen, setStudentSubOpen] = useState<{ madrasa: boolean; university: boolean; school: boolean }>({
+    madrasa: false,
+    university: false,
+    school: false,
+  })
+
   const matchedInstitution =
     registeredInstitutions.find((inst) => inst.wallet.toLowerCase() === (activeAddress || '').toLowerCase()) || null
 
@@ -76,76 +91,152 @@ const Home: React.FC = () => {
                   Partner Institutions
                 </button>
 
-                {/* UNIVERSITY ADMIN DROPDOWN */}
+                {/* ACADEMIC ADMIN PORTAL */}
                 <div className="relative border-t my-1">
-                  <div className="px-4 py-2 font-bold text-purple-700 cursor-pointer hover:bg-gray-50 group">
-                    University / مدرسہ Admin ▾
-                    <div className="hidden group-hover:flex flex-col bg-white border rounded-md w-full mt-1 shadow-lg z-50">
+                  <button
+                    className="w-full text-left px-4 py-2 font-bold text-purple-700 hover:bg-gray-50"
+                    onClick={() => setAdminDropdownOpen(!adminDropdownOpen)}
+                  >
+                    Academic Admin Portal ▾
+                  </button>
+
+                  {adminDropdownOpen && (
+                    <div className="flex flex-col bg-white border-t text-gray-700">
+                      {/* مدرسہ */}
                       <button
-                        className="block w-full text-left px-6 py-2 hover:bg-gray-100"
-                        onClick={() => {
-                          setShowProforma(true)
-                          setMenuOpen(false)
-                        }}
+                        className="px-6 py-2 text-left hover:bg-gray-100"
+                        onClick={() => setAdminSubOpen((prev) => ({ ...prev, madrasa: !prev.madrasa }))}
                       >
-                        Issue Semester Proforma / Transcript
+                        مدرسہ ▾
                       </button>
+                      {adminSubOpen.madrasa && <div className="pl-8 pb-2 text-sm text-gray-500">Coming soon...</div>}
+
+                      {/* UNIVERSITY */}
                       <button
-                        className="block w-full text-left px-6 py-2 hover:bg-gray-100"
-                        onClick={() => {
-                          setShowMint(true)
-                          setMenuOpen(false)
-                        }}
+                        className="px-6 py-2 text-left hover:bg-gray-100"
+                        onClick={() => setAdminSubOpen((prev) => ({ ...prev, university: !prev.university }))}
                       >
-                        Issue Degree
+                        University ▾
                       </button>
+                      {adminSubOpen.university && (
+                        <div className="flex flex-col pl-8 pb-2">
+                          <button
+                            className="text-left py-1 hover:text-purple-700"
+                            onClick={() => {
+                              setShowProforma(true)
+                              setMenuOpen(false)
+                            }}
+                          >
+                            Issue Semester Proforma / Transcript
+                          </button>
+                          <button
+                            className="text-left py-1 hover:text-purple-700"
+                            onClick={() => {
+                              setShowMint(true)
+                              setMenuOpen(false)
+                            }}
+                          >
+                            Issue Degree
+                          </button>
+                        </div>
+                      )}
+
+                      {/* SCHOOL */}
+                      <button
+                        className="px-6 py-2 text-left hover:bg-gray-100"
+                        onClick={() => setAdminSubOpen((prev) => ({ ...prev, school: !prev.school }))}
+                      >
+                        School ▾
+                      </button>
+                      {adminSubOpen.school && <div className="pl-8 pb-2 text-sm text-gray-500">Coming soon...</div>}
                     </div>
-                  </div>
+                  )}
                 </div>
 
-                {/* STUDENT PORTAL DROPDOWN */}
+                {/* STUDENT PORTAL */}
                 <div className="relative border-t my-1">
-                  <div className="px-4 py-2 font-bold text-purple-700 cursor-pointer hover:bg-gray-50 group">
+                  <button
+                    className="w-full text-left px-4 py-2 font-bold text-purple-700 hover:bg-gray-50"
+                    onClick={() => setStudentDropdownOpen(!studentDropdownOpen)}
+                  >
                     Student Portal ▾
-                    <div className="hidden group-hover:flex flex-col bg-white border rounded-md w-full mt-1 shadow-lg z-50">
+                  </button>
+
+                  {studentDropdownOpen && (
+                    <div className="flex flex-col bg-white border-t text-gray-700">
+                      {/* مدرسہ */}
                       <button
-                        className="block w-full text-left px-6 py-2 hover:bg-gray-100"
-                        onClick={() => {
-                          setShowPrintProforma(true)
-                          setMenuOpen(false)
-                        }}
+                        className="px-6 py-2 text-left hover:bg-gray-100"
+                        onClick={() => setStudentSubOpen((prev) => ({ ...prev, madrasa: !prev.madrasa }))}
                       >
-                        Print Semester Transcript / Proforma
+                        مدرسہ ▾
                       </button>
+                      {studentSubOpen.madrasa && <div className="pl-8 pb-2 text-sm text-gray-500">Coming soon...</div>}
+
+                      {/* UNIVERSITY */}
                       <button
-                        className="block w-full text-left px-6 py-2 hover:bg-gray-100"
-                        onClick={() => {
-                          setShowPrintMarksheet(true)
-                          setMenuOpen(false)
-                        }}
+                        className="px-6 py-2 text-left hover:bg-gray-100"
+                        onClick={() => setStudentSubOpen((prev) => ({ ...prev, university: !prev.university }))}
                       >
-                        Print Marksheet
+                        University ▾
                       </button>
+                      {studentSubOpen.university && (
+                        <div className="flex flex-col pl-8 pb-2">
+                          <button
+                            className="text-left py-1 hover:text-purple-700"
+                            onClick={() => {
+                              setShowPrintProforma(true)
+                              setMenuOpen(false)
+                            }}
+                          >
+                            Print Semester Transcript / Proforma
+                          </button>
+                          <button
+                            className="text-left py-1 hover:text-purple-700"
+                            onClick={() => {
+                              setShowPrintMarksheet(true)
+                              setMenuOpen(false)
+                            }}
+                          >
+                            Print Marksheet
+                          </button>
+                          <button
+                            className="text-left py-1 hover:text-purple-700"
+                            onClick={() => {
+                              alert('Print Degree feature coming soon!')
+                              setMenuOpen(false)
+                            }}
+                          >
+                            Print Degree
+                          </button>
+                        </div>
+                      )}
+
+                      {/* SCHOOL */}
                       <button
-                        className="block w-full text-left px-6 py-2 hover:bg-gray-100"
-                        onClick={() => {
-                          alert('Print Degree feature coming soon!')
-                          setMenuOpen(false)
-                        }}
+                        className="px-6 py-2 text-left hover:bg-gray-100"
+                        onClick={() => setStudentSubOpen((prev) => ({ ...prev, school: !prev.school }))}
                       >
-                        Print Degree
+                        School ▾
                       </button>
+                      {studentSubOpen.school && <div className="pl-8 pb-2 text-sm text-gray-500">Coming soon...</div>}
                     </div>
-                  </div>
+                  )}
                 </div>
 
-                {/* VERIFICATION PORTAL DROPDOWN */}
+                {/* VERIFICATION PORTAL (unchanged) */}
                 <div className="relative border-t my-1">
-                  <div className="px-4 py-2 font-bold text-purple-700 cursor-pointer hover:bg-gray-50 group">
+                  <button
+                    className="w-full text-left px-4 py-2 font-bold text-purple-700 hover:bg-gray-50"
+                    onClick={() => setVerifyDropdownOpen(!verifyDropdownOpen)}
+                  >
                     Verification Portal ▾
-                    <div className="hidden group-hover:flex flex-col bg-white border rounded-md w-full mt-1 shadow-lg z-50">
+                  </button>
+
+                  {verifyDropdownOpen && (
+                    <div className="flex flex-col bg-white border-t text-gray-700">
                       <button
-                        className="block w-full text-left px-6 py-2 hover:bg-gray-100"
+                        className="px-6 py-2 text-left hover:bg-gray-100"
                         onClick={() => {
                           setShowPrintMarksheet(true)
                           setMenuOpen(false)
@@ -154,7 +245,7 @@ const Home: React.FC = () => {
                         Verify Marksheet
                       </button>
                       <button
-                        className="block w-full text-left px-6 py-2 hover:bg-gray-100"
+                        className="px-6 py-2 text-left hover:bg-gray-100"
                         onClick={() => {
                           setShowVerify(true)
                           setMenuOpen(false)
@@ -163,7 +254,7 @@ const Home: React.FC = () => {
                         Verify Degree
                       </button>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             )}
@@ -180,7 +271,7 @@ const Home: React.FC = () => {
         </button>
       </nav>
 
-      {/* SECTIONS */}
+      {/* BODY SECTIONS (unchanged) */}
       <section className="bg-gradient-to-r from-green-300 to-green-500 py-20 text-center text-white shadow-md">
         <h2 className="text-4xl font-extrabold mb-4 drop-shadow-lg">Welcome to AlgoCred</h2>
         <p className="text-lg max-w-2xl mx-auto font-medium">
