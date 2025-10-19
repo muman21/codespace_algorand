@@ -128,20 +128,27 @@ function MintDegreeForm({ wallet, goBack }: MintDegreeFormProps) {
       const BATCH_SIZE = 16
       setProgress({ total: rows.length, done: 0 })
 
-      for (let i = 0; i < rows.length; i += BATCH_SIZE - 1) {
-        const batchRows = rows.slice(i, i + (BATCH_SIZE - 1))
+      for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+        const batchRows = rows.slice(i, i + BATCH_SIZE)
         const params = await algodClient.getTransactionParams().do()
         const txns: algosdk.Transaction[] = []
 
-        // Fee transaction
-        const feeTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
-          sender: activeAddress!,
-          receiver: FEE_RECEIVER,
-          amount: FEE_AMOUNT * batchRows.length,
-          assetIndex: TEST_USD_ID,
-          suggestedParams: params,
-        })
-        txns.push(feeTxn)
+        // ✅ Check if this university is fee-exempt
+        const matchedInstitution = registeredInstitutions.find((inst) => inst.name === connectedInstitution)
+
+        // ✅ Only charge fee if the institution is NOT feeExempt
+        if (!matchedInstitution?.feeExempt) {
+          const feeTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+            sender: activeAddress!,
+            receiver: FEE_RECEIVER,
+            amount: FEE_AMOUNT * batchRows.length,
+            assetIndex: TEST_USD_ID,
+            suggestedParams: params,
+          })
+          txns.push(feeTxn)
+        } else {
+          console.log(`💡 Fee skipped for ${connectedInstitution}`)
+        }
 
         // NFT creation transactions
         for (const row of batchRows) {

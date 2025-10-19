@@ -152,19 +152,26 @@ export default function SemesterProformaBatchMint({ wallet, goBack }: Props) {
       const BATCH_SIZE = 16
       setProgress({ total: rows.length, done: 0 })
 
-      for (let i = 0; i < rows.length; i += BATCH_SIZE - 1) {
-        const batchRows = rows.slice(i, i + (BATCH_SIZE - 1))
+      for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+        const batchRows = rows.slice(i, i + BATCH_SIZE)
         const params = await algodClient.getTransactionParams().do()
         const txns: algosdk.Transaction[] = []
 
-        const feeTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
-          sender: activeAddress!,
-          receiver: FEE_RECEIVER,
-          amount: FEE_AMOUNT * batchRows.length,
-          assetIndex: TEST_USD_ID,
-          suggestedParams: params,
-        })
-        txns.push(feeTxn)
+        // ✅ Only charge fee if the institution is NOT feeExempt
+        const matchedInstitution = registeredInstitutions.find((inst) => inst.name === connectedInstitution)
+        if (!matchedInstitution?.feeExempt) {
+          const feeTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+            sender: activeAddress!,
+            receiver: FEE_RECEIVER,
+            amount: FEE_AMOUNT * batchRows.length,
+            assetIndex: TEST_USD_ID,
+            suggestedParams: params,
+          })
+          txns.push(feeTxn)
+        } else {
+          // eslint-disable-next-line no-console
+          console.log(`💡 Fee skipped for ${connectedInstitution}`)
+        }
 
         const batchAssetNames: string[] = [] // store asset names aligned with transactions
 
@@ -183,7 +190,11 @@ export default function SemesterProformaBatchMint({ wallet, goBack }: Props) {
           const { ivB64, cipherB64 } = await aesGcmEncryptJSON(payloadPlain, String(row['seatnumber']))
 
           // Compute sha256 hash digest (raw bytes for assetMetadataHash)
-          const hashInput = `${String(row['studentname']).trim().toLowerCase()}|${universityName.trim().toLowerCase()}|${String(row['seatnumber']).trim().toLowerCase()}|${String(row['semesternumber']).trim()}`
+          const hashInput = `${String(row['studentname']).trim().toLowerCase()}|${universityName.trim().toLowerCase()}|${String(
+            row['seatnumber'],
+          )
+            .trim()
+            .toLowerCase()}|${String(row['semesternumber']).trim()}`
           const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(hashInput))
           const metadataHash = new Uint8Array(hashBuffer)
 
@@ -204,13 +215,11 @@ export default function SemesterProformaBatchMint({ wallet, goBack }: Props) {
               .join('')
           }
 
-          // Compute asset/unit name
           const uniInitials = getInitials(connectedInstitution || '')
           const semNum = String(row['semesternumber']).trim()
           const assetName = `Sem ${semNum} ${uniInitials}`
           const unitName = `S${semNum}${uniInitials}`
 
-          // store for later use
           batchAssetNames.push(assetName)
 
           const nftTxn = algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
@@ -229,10 +238,12 @@ export default function SemesterProformaBatchMint({ wallet, goBack }: Props) {
           txns.push(nftTxn)
         }
 
-        // sign all txns
+        // ----------------- Edited Signing & Minting Loop -----------------
         const encodedUnsigned = txns.map((t) => algosdk.encodeUnsignedTransaction(t))
         const signedBlobs = await signTransactions(encodedUnsigned)
         if (!signedBlobs || signedBlobs.length === 0) throw new Error('Batch signing failed')
+
+        const feeOffset = !matchedInstitution?.feeExempt ? 1 : 0 // skip fee txn
 
         for (let k = 0; k < signedBlobs.length; k++) {
           const signed = signedBlobs[k]
@@ -240,12 +251,13 @@ export default function SemesterProformaBatchMint({ wallet, goBack }: Props) {
           const { txid } = await algodClient.sendRawTransaction(signed).do()
           const conf = await algosdk.waitForConfirmation(algodClient, txid, 4)
 
-          if (k >= 1) {
+          if (k >= feeOffset) {
             const createdAssetId =
               (conf as any)['asset-index'] || (conf as any)['assetIndex'] || (conf as any)['inner-txns']?.[0]?.['created-asset-id']
-            const rowIndex = i + (k - 1)
+
+            const rowIndex = i + (k - feeOffset)
             const studentRow = rows[rowIndex]
-            const mintedAssetName = batchAssetNames[k - 1] // ✅ retrieve the stored name
+            const mintedAssetName = batchAssetNames[k - feeOffset]
 
             results.push({
               seat: String(studentRow['seatnumber'] || ''),
