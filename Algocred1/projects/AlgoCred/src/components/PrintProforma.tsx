@@ -116,7 +116,7 @@ export default function PrintProforma() {
 
   const handleFetch = async () => {
     try {
-      setStatus('🔍 Fetching asset note...')
+      setStatus('🔍 Fetching asset details...')
 
       const indexer = new algosdk.Indexer('', 'https://testnet-idx.algonode.cloud', '')
 
@@ -144,7 +144,7 @@ export default function PrintProforma() {
       const metadata = JSON.parse(noteStr)
 
       const enc = metadata?.properties?.enc
-      if (!enc) throw new Error('No encryption data found in asset note')
+      if (!enc) throw new Error('No encryption data found in asset')
 
       // decrypt
       const decrypted = await aesGcmDecryptJSON(enc.iv, enc.ciphertext, seatNumber.trim())
@@ -191,7 +191,7 @@ export default function PrintProforma() {
         <input className="border p-2" placeholder="Asset ID" value={assetId} onChange={(e) => setAssetId(e.target.value)} />
         <input className="border p-2" placeholder="Seat Number" value={seatNumber} onChange={(e) => setSeatNumber(e.target.value)} />
         <button onClick={handleFetch} className="bg-blue-600 text-white py-2 rounded">
-          Fetch & Decrypt
+          Verify & Print
         </button>
       </div>
 
