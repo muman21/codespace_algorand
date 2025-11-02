@@ -118,10 +118,28 @@ export default function PrintProforma() {
     try {
       setStatus('🔍 Fetching asset details...')
 
-      const indexer = new algosdk.Indexer('', 'https://testnet-idx.algonode.network', '')
+      // Create both indexers
+      const indexerFast = new algosdk.Indexer('', 'https://testnet-idx.algonode.cloud', '')
+      const indexerArchive = new algosdk.Indexer('', 'https://mainnet-idx.algonode.cloud', '') // fallback for older assets (archive sometimes unreliable on testnet)
 
-      // find creation tx for this asset
-      const txns = await indexer.searchForTransactions().assetID(Number(assetId)).txType('acfg').limit(1).do()
+      // Try fetching from fast (non-archival) first
+      let txns
+      try {
+        txns = await indexerFast.searchForTransactions().assetID(Number(assetId)).txType('acfg').limit(1).do()
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('Fast indexer failed, trying archival...', e)
+        txns = { transactions: [] }
+      }
+
+      // If not found, fallback to archival
+      if (!txns.transactions || txns.transactions.length === 0) {
+        try {
+          txns = await indexerArchive.searchForTransactions().assetID(Number(assetId)).txType('acfg').limit(1).do()
+        } catch (e) {
+          throw new Error('Both indexers failed to fetch transactions')
+        }
+      }
 
       if (!txns.transactions || txns.transactions.length === 0) {
         throw new Error('No asset creation transaction found for this Asset ID')
@@ -130,15 +148,15 @@ export default function PrintProforma() {
       const creationTxn = txns.transactions[0]
       if (!creationTxn.note) throw new Error('No note found in asset creation transaction')
 
-      // ✅ get creator wallet
+      // ✅ Get creator wallet
       const creatorWallet = creationTxn.sender
 
-      // ✅ find matching institution
+      // ✅ Find matching institution
       const institution = registeredInstitutions.find((inst: { wallet: string }) => inst.wallet === creatorWallet)
       const uniName = institution ? institution.name : 'Unknown Institution'
       setInstitutionName(uniName)
 
-      // decode note
+      // ✅ Decode note
       const noteBuf = noteToArrayBuffer(creationTxn.note)
       const noteStr = new TextDecoder().decode(noteBuf)
       const metadata = JSON.parse(noteStr)
@@ -146,7 +164,7 @@ export default function PrintProforma() {
       const enc = metadata?.properties?.enc
       if (!enc) throw new Error('No encryption data found in asset')
 
-      // decrypt
+      // ✅ Decrypt
       const decrypted = await aesGcmDecryptJSON(enc.iv, enc.ciphertext, seatNumber.trim())
       if (decrypted.seatNumber.toLowerCase() !== seatNumber.trim().toLowerCase()) {
         throw new Error('Seat number mismatch')
@@ -155,6 +173,8 @@ export default function PrintProforma() {
       setData(decrypted)
       setStatus('✅ Success! Proforma ready.')
     } catch (err: any) {
+      // eslint-disable-next-line no-console
+      console.error(err)
       setStatus(`❌ ${err.message}`)
     }
   }
@@ -191,7 +211,7 @@ export default function PrintProforma() {
         <input className="border p-2" placeholder="Asset ID" value={assetId} onChange={(e) => setAssetId(e.target.value)} />
         <input className="border p-2" placeholder="Seat Number" value={seatNumber} onChange={(e) => setSeatNumber(e.target.value)} />
         <button onClick={handleFetch} className="bg-blue-600 text-white py-2 rounded">
-          Verify & Print
+          Fetch & Decrypt
         </button>
       </div>
 
