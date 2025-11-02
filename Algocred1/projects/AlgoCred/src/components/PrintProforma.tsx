@@ -118,7 +118,7 @@ export default function PrintProforma() {
     try {
       setStatus('🔍 Fetching asset details...')
 
-      const indexer = new algosdk.Indexer('', 'https://testnet-idx.algonode.cloud', '')
+      const indexer = new algosdk.Indexer('', 'https://testnet-idx.algonode.network', '')
 
       // find creation tx for this asset
       const txns = await indexer.searchForTransactions().assetID(Number(assetId)).txType('acfg').limit(1).do()
