@@ -9,7 +9,7 @@ export type Institution = {
 export const registeredInstitutions: Institution[] = [
   {
     wallet: 'M62NKUYCQT2ESAMEOSGJPTNFCEESEPKJAMSQCPCYNMFJQ4N7VSSKKS6EAM',
-    name: 'Darul Uloom Memon',
+    name: 'Karachi University',
     feeExempt: true, // ❌ Skip payment
   },
   {

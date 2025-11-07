@@ -73,7 +73,7 @@ export async function extractUniversityName(file: File, registeredInstitutions: 
 
   // Fallback: simple filename heuristics
   const lower = file.name.toLowerCase()
-  if (lower.includes('memon')) return 'Darul Uloom Memon'
+  if (lower.includes('memon')) return 'Karachi University'
   if (lower.includes('smiu')) return 'SMIU'
   if (lower.includes('abc')) return 'ABC University'
 
