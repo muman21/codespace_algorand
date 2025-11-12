@@ -24,7 +24,7 @@ function calculateCGPA_KarachiUniversity(courses: { marks: number }[]): { total:
     else if (c.marks >= 61) gpa = 2.0
     else if (c.marks >= 58) gpa = 1.8
     else if (c.marks >= 54) gpa = 1.4
-    else if (c.marks >= 51) gpa = 1.0
+    else if (c.marks >= 50) gpa = 1.0
     else gpa = 0
     gpas.push(gpa)
   })
