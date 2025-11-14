@@ -4,6 +4,7 @@ import algosdk from 'algosdk'
 import domtoimage from 'dom-to-image-more'
 import { registeredInstitutions } from '../utils/registeredinstitutions'
 import { calculateCGPAForInstitution, gradingMap } from '../utils/grading'
+import { CONFIG } from '../configure/network'
 
 // AES Key from Seat Number
 async function deriveAesKeyFromSeat(seatNumber: string): Promise<CryptoKey> {
@@ -89,8 +90,8 @@ export default function PrintMarksheet() {
     try {
       setStatus('🔍 Fetching all semesters...')
 
-      const indexerFast = new algosdk.Indexer('', 'https://testnet-idx.algonode.cloud', '')
-      const indexerArchive = new algosdk.Indexer('', 'https://mainnet-idx.algonode.cloud', '')
+      const indexerFast = new algosdk.Indexer('', CONFIG.indexer, '')
+      const indexerArchive = new algosdk.Indexer('', CONFIG.archiveIndexer, '')
 
       const ids = assetIds
         .split(',')
@@ -329,9 +330,7 @@ export default function PrintMarksheet() {
               })}
             </div>
 
-            {/* Added spacing at bottom for visual breathing room */}
             <div className="h-6" />
-            {/* Add bottom buffer so last rows aren't clipped */}
             <div className="h-10"></div>
           </div>
 

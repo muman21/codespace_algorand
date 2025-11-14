@@ -9,9 +9,12 @@ import { saveAs } from 'file-saver'
 // Registered institutions (imported instead of hardcoded)
 import { registeredInstitutions } from '../utils/registeredinstitutions'
 
-const TEST_USD_ID = 745142652
-const TEST_USD_DECIMALS = 2
-const FEE_AMOUNT = 9 * 10 ** TEST_USD_DECIMALS // 9 TUSD per student
+// ✅ Import network configuration and assets
+import { CONFIG, ASSETS } from '../configure/network'
+
+const USDC_ID = ASSETS.USDC
+const USDC_DECIMALS = 2
+const FEE_AMOUNT = 5 * 10 ** USDC_DECIMALS // 5 USDC per student
 const FEE_RECEIVER = 'CRL73DO2N6HT25UJVAF3VKSIXELBDOIQBZ44LTQCLYBLRCAHRYJBUNOVZQ'
 
 type MintDegreeFormProps = {
@@ -112,7 +115,8 @@ function MintDegreeForm({ wallet, goBack }: MintDegreeFormProps) {
 
       if (rows.length === 0) throw new Error('No student rows found in the spreadsheet')
 
-      const algodClient = new algosdk.Algodv2('', 'https://testnet-api.algonode.cloud', '')
+      // ✅ Use CONFIG from network.ts
+      const algodClient = new algosdk.Algodv2(CONFIG.algodToken, CONFIG.algodServer, CONFIG.algodPort)
 
       const results: {
         university: string
@@ -133,16 +137,14 @@ function MintDegreeForm({ wallet, goBack }: MintDegreeFormProps) {
         const params = await algodClient.getTransactionParams().do()
         const txns: algosdk.Transaction[] = []
 
-        // ✅ Check if this university is fee-exempt
         const matchedInstitution = registeredInstitutions.find((inst) => inst.name === connectedInstitution)
 
-        // ✅ Only charge fee if the institution is NOT feeExempt
         if (!matchedInstitution?.feeExempt) {
           const feeTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
             sender: activeAddress!,
             receiver: FEE_RECEIVER,
             amount: FEE_AMOUNT * batchRows.length,
-            assetIndex: TEST_USD_ID,
+            assetIndex: USDC_ID,
             suggestedParams: params,
           })
           txns.push(feeTxn)
@@ -150,7 +152,6 @@ function MintDegreeForm({ wallet, goBack }: MintDegreeFormProps) {
           console.log(`💡 Fee skipped for ${connectedInstitution}`)
         }
 
-        // NFT creation transactions
         for (const row of batchRows) {
           const dataString = formatDegreeData(
             String(row['studentname'] || ''),

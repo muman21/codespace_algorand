@@ -8,10 +8,13 @@ import { saveAs } from 'file-saver'
 // Registered institutions
 import { registeredInstitutions } from '../utils/registeredinstitutions'
 
+// Network config
+import { algodClient, ASSETS } from '../configure/network' // ✅ updated import path and ASSETS
+
 // SaaS Fee Config (same as original semester proforma)
-const TEST_USD_ID = 745142652
-const TEST_USD_DECIMALS = 2
-const FEE_AMOUNT = 0.1 * 10 ** TEST_USD_DECIMALS // 0.1 TUSD per student
+const USDC_ID = ASSETS.USDC
+const USDC_DECIMALS = 2
+const FEE_AMOUNT = 1 * 10 ** USDC_DECIMALS // 1 USDC per student
 const FEE_RECEIVER = 'CRL73DO2N6HT25UJVAF3VKSIXELBDOIQBZ44LTQCLYBLRCAHRYJBUNOVZQ'
 
 // ---------- Crypto Helpers (AES-GCM-256 with key derived from seat number) ----------
@@ -146,7 +149,6 @@ export default function SemesterProformaBatchMint({ wallet, goBack }: Props) {
 
       if (rows.length === 0) throw new Error('No student rows found')
 
-      const algodClient = new algosdk.Algodv2('', 'https://testnet-api.algonode.cloud', '')
       const results: any[] = []
 
       const BATCH_SIZE = 16
@@ -154,7 +156,7 @@ export default function SemesterProformaBatchMint({ wallet, goBack }: Props) {
 
       for (let i = 0; i < rows.length; i += BATCH_SIZE) {
         const batchRows = rows.slice(i, i + BATCH_SIZE)
-        const params = await algodClient.getTransactionParams().do()
+        const params = await algodClient.getTransactionParams().do() // ✅ use config.algodClient
         const txns: algosdk.Transaction[] = []
 
         // ✅ Only charge fee if the institution is NOT feeExempt
@@ -164,7 +166,7 @@ export default function SemesterProformaBatchMint({ wallet, goBack }: Props) {
             sender: activeAddress!,
             receiver: FEE_RECEIVER,
             amount: FEE_AMOUNT * batchRows.length,
-            assetIndex: TEST_USD_ID,
+            assetIndex: USDC_ID,
             suggestedParams: params,
           })
           txns.push(feeTxn)
@@ -248,8 +250,8 @@ export default function SemesterProformaBatchMint({ wallet, goBack }: Props) {
         for (let k = 0; k < signedBlobs.length; k++) {
           const signed = signedBlobs[k]
           if (!signed) throw new Error('A transaction was not signed')
-          const { txid } = await algodClient.sendRawTransaction(signed).do()
-          const conf = await algosdk.waitForConfirmation(algodClient, txid, 4)
+          const { txid } = await algodClient.sendRawTransaction(signed).do() // ✅ use config.algodClient
+          const conf = await algosdk.waitForConfirmation(algodClient, txid, 4) // ✅ use config.algodClient
 
           if (k >= feeOffset) {
             const createdAssetId =

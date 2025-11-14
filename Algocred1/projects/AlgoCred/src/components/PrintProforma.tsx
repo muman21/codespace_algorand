@@ -4,6 +4,7 @@ import algosdk from 'algosdk'
 import domtoimage from 'dom-to-image-more'
 import { registeredInstitutions } from '../utils/registeredinstitutions'
 import { calculateCGPAForInstitution, gradingMap } from '../utils/grading' // ✅ import gradingMap too
+import { CONFIG } from '../configure/network' // ✅ use network config
 
 // AES Decrypt
 async function deriveAesKeyFromSeat(seatNumber: string): Promise<CryptoKey> {
@@ -87,8 +88,8 @@ export default function PrintProforma() {
     try {
       setStatus('🔍 Fetching asset details...')
 
-      const indexerFast = new algosdk.Indexer('', 'https://testnet-idx.algonode.cloud', '')
-      const indexerArchive = new algosdk.Indexer('', 'https://mainnet-idx.algonode.cloud', '')
+      const indexerFast = new algosdk.Indexer('', CONFIG.indexer, '')
+      const indexerArchive = new algosdk.Indexer('', CONFIG.archiveIndexer, '')
 
       let txns
       try {

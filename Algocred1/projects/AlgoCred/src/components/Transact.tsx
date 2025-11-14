@@ -1,8 +1,9 @@
-import { algo, AlgorandClient } from '@algorandfoundation/algokit-utils'
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useWallet } from '@txnlab/use-wallet-react'
 import { useSnackbar } from 'notistack'
 import { useState } from 'react'
-import { getAlgodConfigFromViteEnvironment } from '../utils/network/getAlgoClientConfigs'
+import { algodClient } from '../configure/network' // ✅ use shared network client
+import algosdk from 'algosdk'
 
 interface TransactInterface {
   openModal: boolean
@@ -13,11 +14,7 @@ const Transact = ({ openModal, setModalState }: TransactInterface) => {
   const [loading, setLoading] = useState<boolean>(false)
   const [receiverAddress, setReceiverAddress] = useState<string>('')
 
-  const algodConfig = getAlgodConfigFromViteEnvironment()
-  const algorand = AlgorandClient.fromConfig({ algodConfig })
-
   const { enqueueSnackbar } = useSnackbar()
-
   const { transactionSigner, activeAddress } = useWallet()
 
   const handleSubmitAlgo = async () => {
@@ -25,24 +22,48 @@ const Transact = ({ openModal, setModalState }: TransactInterface) => {
 
     if (!transactionSigner || !activeAddress) {
       enqueueSnackbar('Please connect wallet first', { variant: 'warning' })
+      setLoading(false)
+      return
+    }
+
+    if (receiverAddress.length !== 58) {
+      enqueueSnackbar('Invalid receiver address', { variant: 'warning' })
+      setLoading(false)
       return
     }
 
     try {
       enqueueSnackbar('Sending transaction...', { variant: 'info' })
-      const result = await algorand.send.payment({
-        signer: transactionSigner,
+
+      // Get suggested transaction params
+      const params = await algodClient.getTransactionParams().do()
+
+      // Create transaction
+      const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
         sender: activeAddress,
         receiver: receiverAddress,
-        amount: algo(1),
+        amount: 1_000_000, // 1 Algo in microAlgos
+        suggestedParams: params,
       })
-      enqueueSnackbar(`Transaction sent: ${result.txIds[0]}`, { variant: 'success' })
-      setReceiverAddress('')
-    } catch (e) {
-      enqueueSnackbar('Failed to send transaction', { variant: 'error' })
-    }
 
-    setLoading(false)
+      // ✅ Sign transaction via wallet (pass transaction and index array)
+      const signedBlobs = await transactionSigner([txn], [0])
+      if (!signedBlobs || signedBlobs.length === 0) throw new Error('Transaction signing failed')
+
+      // Send transaction
+      const { txid } = await algodClient.sendRawTransaction(signedBlobs[0]).do()
+      await algosdk.waitForConfirmation(algodClient, txid, 4)
+
+      enqueueSnackbar(`Transaction sent successfully: ${txid}`, { variant: 'success' })
+      setReceiverAddress('')
+      setModalState(false)
+    } catch (err: any) {
+      // eslint-disable-next-line no-console
+      console.error(err)
+      enqueueSnackbar(err?.message || 'Failed to send transaction', { variant: 'error' })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -52,23 +73,16 @@ const Transact = ({ openModal, setModalState }: TransactInterface) => {
         <br />
         <input
           type="text"
-          data-test-id="receiver-address"
           placeholder="Provide wallet address"
           className="input input-bordered w-full"
           value={receiverAddress}
-          onChange={(e) => {
-            setReceiverAddress(e.target.value)
-          }}
+          onChange={(e) => setReceiverAddress(e.target.value)}
         />
-        <div className="modal-action ">
-          <button className="btn" onClick={() => setModalState(!openModal)}>
+        <div className="modal-action">
+          <button type="button" className="btn" onClick={() => setModalState(false)}>
             Close
           </button>
-          <button
-            data-test-id="send-algo"
-            className={`btn ${receiverAddress.length === 58 ? '' : 'btn-disabled'} lo`}
-            onClick={handleSubmitAlgo}
-          >
+          <button type="button" className={`btn ${receiverAddress.length === 58 ? '' : 'btn-disabled'}`} onClick={handleSubmitAlgo}>
             {loading ? <span className="loading loading-spinner" /> : 'Send 1 Algo'}
           </button>
         </div>

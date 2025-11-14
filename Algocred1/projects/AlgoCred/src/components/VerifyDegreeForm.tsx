@@ -1,5 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react'
 import algosdk from 'algosdk'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { algodClient, CONFIG } from '../configure/network' // ✅ use shared network.ts
 
 // 🔑 Hash format aligned with MintDegree
 function formatDegreeData(
@@ -38,7 +41,8 @@ function VerifyDegreeForm({ goBack }: VerifyDegreeFormProps) {
     setVerified(null)
 
     try {
-      const indexerClient = new algosdk.Indexer('', 'https://testnet-idx.algonode.cloud', '')
+      // ✅ Use shared indexer from network.ts
+      const indexerClient = new algosdk.Indexer('', CONFIG.indexer, '')
       const assetInfo = await indexerClient.lookupAssetByID(Number(asaId)).do()
 
       // ✅ Use metadata-hash instead of note
