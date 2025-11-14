@@ -13,7 +13,7 @@ import { algodClient, ASSETS } from '../configure/network' // ✅ updated import
 
 // SaaS Fee Config (same as original semester proforma)
 const USDC_ID = ASSETS.USDC
-const USDC_DECIMALS = 2
+const USDC_DECIMALS = 6
 const FEE_AMOUNT = 1 * 10 ** USDC_DECIMALS // 1 USDC per student
 const FEE_RECEIVER = 'CRL73DO2N6HT25UJVAF3VKSIXELBDOIQBZ44LTQCLYBLRCAHRYJBUNOVZQ'
 

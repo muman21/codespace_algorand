@@ -13,7 +13,7 @@ import { registeredInstitutions } from '../utils/registeredinstitutions'
 import { CONFIG, ASSETS } from '../configure/network'
 
 const USDC_ID = ASSETS.USDC
-const USDC_DECIMALS = 2
+const USDC_DECIMALS = 6
 const FEE_AMOUNT = 5 * 10 ** USDC_DECIMALS // 5 USDC per student
 const FEE_RECEIVER = 'CRL73DO2N6HT25UJVAF3VKSIXELBDOIQBZ44LTQCLYBLRCAHRYJBUNOVZQ'
 
