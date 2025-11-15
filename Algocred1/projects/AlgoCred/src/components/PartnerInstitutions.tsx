@@ -26,6 +26,7 @@ const PartnerInstitutions: React.FC = () => {
           <h3 className="text-xl font-bold mb-2">ABC University</h3>
           <p className="text-gray-700">Adopting blockchain to enhance trust in academic credentials.</p>
         </div>
+
         <div className="bg-white border-l-4 border-purple-600 p-6 rounded-xl shadow-md w-full sm:w-[22rem] text-center">
           <img src="/iqra-logo.png" alt="LMN University Logo" className="h-12 mx-auto mb-4" />
           <h3 className="text-xl font-bold mb-2">LMN University</h3>
