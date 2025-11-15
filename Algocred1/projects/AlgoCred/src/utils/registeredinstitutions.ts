@@ -27,4 +27,9 @@ export const registeredInstitutions: Institution[] = [
     name: 'XYZ University',
     feeExempt: true, // ❌ Skip payment
   },
+  {
+    wallet: 'UZ64IM4OZIICXLXDNVAQ73JT6DNHYKPU2NG4VD6AH55W5FYPMNFH5JCB24',
+    name: 'LMN University',
+    feeExempt: false, // ✅ Payment required
+  },
 ]
