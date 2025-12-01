@@ -376,7 +376,7 @@ const Home: React.FC = () => {
           </div>
 
           <h1 className="text-2xl font-bold text-white leading-tight">
-            AlgoCred
+            CrediChain
             <sub className="text-sm text-gray-200 ml-1">by RZ Services</sub>
           </h1>
         </div>
@@ -388,7 +388,7 @@ const Home: React.FC = () => {
 
       {/* BODY SECTIONS (unchanged) */}
       <section className="bg-gradient-to-r from-green-300 to-green-500 py-20 text-center text-white shadow-md">
-        <h2 className="text-4xl font-extrabold mb-4 drop-shadow-lg">Welcome to AlgoCred</h2>
+        <h2 className="text-4xl font-extrabold mb-4 drop-shadow-lg">Welcome to CrediChain</h2>
         <p className="text-lg max-w-2xl mx-auto font-medium">
           A blockchain-based platform for issuing and verifying academic credentials with authenticity, ZK-transparency, and global
           accessibility.
@@ -397,7 +397,7 @@ const Home: React.FC = () => {
 
       <section className="bg-purple-50 py-16">
         <div className="max-w-6xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-purple-800 mb-8">Why AlgoCred?</h2>
+          <h2 className="text-3xl font-bold text-purple-800 mb-8">Why CrediChain?</h2>
           <div className="grid md:grid-cols-3 gap-8 text-left">
             <div className="p-6 bg-white rounded-xl shadow-md border-l-4 border-purple-500">
               <h3 className="font-semibold text-lg mb-2">Tamper-proof Records</h3>
@@ -439,7 +439,7 @@ const Home: React.FC = () => {
 
       {/* FOOTER */}
       <footer className="bg-purple-900 text-white text-center py-6">
-        <p className="font-medium">AlgoCred — Academic Credential Verification on Blockchain</p>
+        <p className="font-medium">CrediChain — Academic Credential Verification on Blockchain</p>
         <p className="text-sm mt-2 text-gray-300">© {new Date().getFullYear()} RZ Services. All rights reserved.</p>
       </footer>
 

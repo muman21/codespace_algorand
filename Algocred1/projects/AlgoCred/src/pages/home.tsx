@@ -9,7 +9,7 @@ const Home: React.FC = () => {
       {/* Top Header Section */}
       <div className="h-[20vh] w-full bg-gradient-to-r from-purple-900 via-purple-700 to-indigo-600 flex flex-col items-center justify-center shadow-md">
         <h1 className="text-5xl font-extrabold mb-2 tracking-wide drop-shadow-lg">
-          AlgoCred <sub className="text-green-300 text-xl font-semibold align-baseline">by RZ Services</sub>
+          CrediChain <sub className="text-green-300 text-xl font-semibold align-baseline">by RZ Services</sub>
         </h1>
         <h2 className="text-lg font-medium text-gray-200">
           Empowering Academic Integrity — <span className="text-white font-semibold">Powered by Algorand</span>
