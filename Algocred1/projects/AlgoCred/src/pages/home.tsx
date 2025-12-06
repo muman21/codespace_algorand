@@ -34,7 +34,7 @@ const Home: React.FC = () => {
               Access blockchain-based degree issuance and verification for universities and students.
             </p>
             <button
-              onClick={() => navigate('/algocred')}
+              onClick={() => navigate('/credichain')}
               className="mt-6 px-6 py-2 bg-green-400 text-purple-900 font-semibold rounded-lg hover:bg-green-300"
             >
               Enter Portal

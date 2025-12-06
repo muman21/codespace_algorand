@@ -5,7 +5,7 @@ import { getAlgodConfigFromViteEnvironment } from './utils/network/getAlgoClient
 
 // Pages
 import Home from './pages/home' // new landing page
-import AlgoCredDashboard from './pages/algocred' // your old Home.tsx renamed
+import AlgoCredDashboard from './pages/credichain' // your old Home.tsx renamed
 import LMS from './pages/lms' // new LMS/ERP page
 
 const supportedWallets: SupportedWallet[] = [{ id: WalletId.PERA }, { id: WalletId.DEFLY }, { id: WalletId.EXODUS }]
@@ -36,7 +36,7 @@ export default function App() {
         <Router>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/algocred" element={<AlgoCredDashboard />} />
+            <Route path="/credichain" element={<AlgoCredDashboard />} />
             <Route path="/lms" element={<LMS />} />
           </Routes>
         </Router>
